@@ -108,7 +108,6 @@
 		: 100);
 
 		const defaultOptions = getDefaultChartOptions(isDark);\t	return {
-		plugins: {
 			...(defaultOptions.plugins ?? {}),
 			tooltip: {
 				...(defaultOptions.plugins?.tooltip ?? {}),
