@@ -10,7 +10,7 @@
 	<header class="sticky top-0 z-40 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-border)]">
 		<nav class="container mx-auto px-4 py-4 max-w-7xl">
 			<div class="flex items-center justify-between">
-				<a href="../" class="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
+				<a href="/" class="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
 					<div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
 						<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<path d="M3 6h18M3 12h18M3 18h18" />
@@ -22,9 +22,9 @@
 					<span>Pulito</span>
 				</a>
 				<div class="flex items-center gap-4">
-					<a href="../" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Home</a>
-					<a href="../download" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Download</a>
-					<a href="../faq" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">FAQ</a>
+					<a href="/" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Home</a>
+					<a href="/download" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Download</a>
+					<a href="/faq" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">FAQ</a>
 				</div>
 			</div>
 		</nav>
@@ -403,10 +403,10 @@
 				<p class="text-[var(--color-text-secondary)]">Join thousands of Linux users who trust Pulito for safe, effective system cleanup.</p>
 			</div>
 			<div class="flex flex-col sm:flex-row gap-4 justify-center">
-				<a href="../download" class="btn btn-primary btn-lg px-8 py-4 text-lg font-semibold">
+				<a href="/download" class="btn btn-primary btn-lg px-8 py-4 text-lg font-semibold">
 					🚀 Download Free
 				</a>
-				<a href="../faq" class="btn btn-secondary btn-lg px-8 py-4 text-lg">
+				<a href="/faq" class="btn btn-secondary btn-lg px-8 py-4 text-lg">
 					Learn More
 				</a>
 			</div>
