@@ -1,4 +1,6 @@
 <script lang="ts">
+	// Default export for the component
+</script>
 	import { onMount } from 'svelte';
 	import { invoke, formatBytes } from '$lib/utils/tauri';
 	import { navigation } from '$lib/stores/navigation.svelte';
@@ -338,7 +340,10 @@
 			<!-- Storage Breakdown -->
 			<div class="lg:col-span-2 card p-6">
 				<h2 class="font-semibold mb-4">Storage Breakdown</h2>
-				<StorageDonutChart\n					data={[60, 30, 10]}\n					height={200}\n				/>
+				<StorageDonutChart
+					data={[60, 30, 10]}
+					height={200}
+				/>
 			<div class="card p-6 flex flex-col items-center justify-center">
 				<h2 class="font-semibold mb-4">System Health</h2>
 				<PerformanceGauge value={healthScore} size={180} />
