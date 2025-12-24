@@ -82,7 +82,6 @@
 					borderWidth: 1.5,
 					pointHoverRadius: 3
 				});
-			});
 		});
 
 		return datasets;
