@@ -76,11 +76,11 @@
 			...defaultOptions,
 			plugins: {
 				...(defaultOptions.plugins ?? {}),
-			legend: {
-				position: 'right' as const,
-				labels: {
-					...(defaultOptions.plugins?.legend?.labels ?? {}),
-					padding: 15,
+				legend: {
+					position: 'right' as const,
+					labels: {
+						...(defaultOptions.plugins?.legend?.labels ?? {}),
+						padding: 15,
 					usePointStyle: true,
 					font: {
 						size: 12
@@ -113,8 +113,8 @@
 					}
 				}
 			},
-			tooltip: {
-				...(defaultOptions.plugins?.tooltip ?? {}),
+				tooltip: {
+					...(defaultOptions.plugins?.tooltip ?? {}),
 				callbacks: {
 					label: (context: any) => {
 						const label = context.label || '';

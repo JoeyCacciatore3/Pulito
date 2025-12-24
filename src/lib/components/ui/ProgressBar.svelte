@@ -6,6 +6,7 @@
 		showLabel?: boolean;
 		label?: string;
 		animated?: boolean;
+		class?: string;
 	}
 
 	let {

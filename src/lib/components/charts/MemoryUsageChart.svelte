@@ -108,10 +108,11 @@
 
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
+		const defaultOptions = getDefaultChartOptions(isDark);
 		plugins: {
-			...(getDefaultChartOptions(isDark).plugins ?? {}),
+			...(defaultOptions.plugins ?? {}),
 			tooltip: {
-				...(getDefaultChartOptions(isDark).plugins?.tooltip ?? {}),
+				...(defaultOptions.plugins?.tooltip ?? {}),
 				mode: 'index' as const,
 				intersect: false,
 				callbacks: {
@@ -122,18 +123,18 @@
 			}
 		},
 		scales: {
-			...(getDefaultChartOptions(isDark).scales ?? {}),
+			...(defaultOptions.scales ?? {}),
 			x: {
-				...(getDefaultChartOptions(isDark).scales?.x ?? {}),
+				...(defaultOptions.scales?.x ?? {}),
 				stacked: true
 			},
 			y: {
-				...(getDefaultChartOptions(isDark).scales?.y ?? {}),
+				...(defaultOptions.scales?.y ?? {}),
 				stacked: true,
 				beginAtZero: true,
 				max: maxValue,
 				ticks: {
-					...(getDefaultChartOptions(isDark).scales?.y?.ticks ?? {}),
+					...(defaultOptions.scales?.y?.ticks ?? {}),
 					callback: (value: number) => formatBytesForChart(value)
 				}
 			}
@@ -162,5 +163,5 @@
 </script>
 
 <div class="w-full" style="height: {height}">
-	<Line data={chartData} options={chartOptions} />
+	<Line data={chartData} options={chartOptions as any} />
 </div>

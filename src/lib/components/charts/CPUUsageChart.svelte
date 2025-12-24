@@ -94,10 +94,11 @@
 
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
+		const defaultOptions = getDefaultChartOptions(isDark);
 		plugins: {
-			...(getDefaultChartOptions(isDark).plugins ?? {}),
+			...(defaultOptions.plugins ?? {}),
 			tooltip: {
-				...(getDefaultChartOptions(isDark).plugins?.tooltip ?? {}),
+				...(defaultOptions.plugins?.tooltip ?? {}),
 				mode: 'index' as const,
 				intersect: false,
 				callbacks: {
@@ -108,13 +109,13 @@
 			}
 		},
 		scales: {
-			...(getDefaultChartOptions(isDark).scales ?? {}),
+			...(defaultOptions.scales ?? {}),
 			y: {
-				...(getDefaultChartOptions(isDark).scales?.y ?? {}),
+				...(defaultOptions.scales?.y ?? {}),
 				beginAtZero: true,
 				max: 100,
 				ticks: {
-					...(getDefaultChartOptions(isDark).scales?.y?.ticks ?? {}),
+					...(defaultOptions.scales?.y?.ticks ?? {}),
 					callback: (value: number) => `${value}%`
 				}
 			}
@@ -143,5 +144,5 @@
 </script>
 
 <div class="w-full" style="height: {height}">
-	<Line data={chartData} options={chartOptions} />
+	<Line data={chartData} options={chartOptions as any} />
 </div>
