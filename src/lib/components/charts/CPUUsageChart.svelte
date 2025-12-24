@@ -11,7 +11,6 @@
 		timestamp: number;
 		usage: number;
 		coreUsages?: number[];
-	});
 
 	interface Props {
 		data: DataPoint[];
