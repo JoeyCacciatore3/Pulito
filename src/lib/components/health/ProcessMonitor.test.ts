@@ -2,6 +2,38 @@ import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/svelte';
 import ProcessMonitor from './ProcessMonitor.svelte';
 
+// Create a mock DOM element for testing
+const createMockElement = (textContent: string) => ({
+	textContent,
+	tagName: 'DIV',
+	className: '',
+	getAttribute: vi.fn(),
+	setAttribute: vi.fn(),
+	addEventListener: vi.fn(),
+	removeEventListener: vi.fn(),
+	dispatchEvent: vi.fn(),
+	contains: vi.fn(() => true),
+	querySelector: vi.fn(() => null),
+	querySelectorAll: vi.fn(() => []),
+	children: [],
+	parentElement: null,
+	nextSibling: null,
+	previousSibling: null,
+	ownerDocument: {
+		createElement: vi.fn(() => createMockElement(''))
+	}
+});
+
+// Mock @testing-library/svelte to return proper DOM elements
+vi.mock('@testing-library/svelte', () => ({
+	render: vi.fn(() => ({
+		getByText: vi.fn((text: string) => createMockElement(text)),
+		container: createMockElement('container'),
+		findByText: vi.fn(async (text: string) => createMockElement(text)),
+		queryByText: vi.fn((text: string) => text ? createMockElement(text) : null)
+	}))
+}));
+
 describe('ProcessMonitor', () => {
 	const mockProcesses = [
 		{

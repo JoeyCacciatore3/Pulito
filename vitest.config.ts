@@ -8,6 +8,11 @@ export default defineConfig({
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		environment: 'jsdom',
 		setupFiles: ['./src/test/setup.ts'],
+		server: {
+			deps: {
+				inline: ['@testing-library/svelte']
+			}
+		},
 		globals: true,
 		testTimeout: 10000, // 10 second timeout for tests
 		coverage: {
