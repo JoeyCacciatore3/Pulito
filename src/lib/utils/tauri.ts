@@ -67,7 +67,7 @@ class IPCManager {
 		// Insert based on priority (high priority first)
 		const priorityOrder = { high: 0, normal: 1, low: 2 };
 		const insertIndex = this.queue.findIndex(
-			req => priorityOrder[req.options.priority || 'normal'] > priorityOrder[request.options.priority || 'normal']
+			req => priorityOrder[req.options.priority ?? 'normal'] > priorityOrder[request.options.priority ?? 'normal']
 		);
 
 		if (insertIndex === -1) {
@@ -111,7 +111,7 @@ class IPCManager {
 	 */
 	private async executeRequest(request: IPCRequest): Promise<void> {
 		const { cmd, args, options, resolve, reject } = request;
-		const timeout = options.timeout || 30000; // 30 second default
+		const timeout = options.timeout ?? 30000; // 30 second default
 
 		try {
 			// Execute with timeout
@@ -175,7 +175,7 @@ class IPCManager {
 				args: request.args,
 				attempts: request.attempts,
 				timestamp: new Date().toISOString(),
-				message: error.message || 'Unknown IPC error'
+				message: error.message ?? 'Unknown IPC error'
 			};
 
 			reject(enhancedError);
@@ -186,7 +186,7 @@ class IPCManager {
 	 * Determine if an error is retryable
 	 */
 	private isRetryableError(error: any): boolean {
-		const message = error.message || error.toString();
+		const message = error.message ?? error.toString();
 
 		// Retry on network-like errors, timeouts, but not on permission errors
 		const retryablePatterns = [
