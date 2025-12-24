@@ -4,9 +4,9 @@
 		{
 			"type": "node",
 			"request": "launch",
-			"name": "Debug SvelteKit Dev Server",
+			"name": "Debug Marketing Site Dev Server",
 			"runtimeExecutable": "npm",
-			"runtimeArgs": ["run", "dev"],
+			"runtimeArgs": ["run", "marketing:dev"],
 			"console": "integratedTerminal",
 			"internalConsoleOptions": "neverOpen",
 			"skipFiles": ["<node_internals>/**", "**/node_modules/**"]
