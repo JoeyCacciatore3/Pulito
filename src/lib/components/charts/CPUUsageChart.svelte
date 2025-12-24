@@ -11,7 +11,11 @@
 		timestamp: number;
 		usage: number;
 		coreUsages?: number[];
-	interface Props {\n		data: DataPoint[];\n		timeRange?: '1h' | '6h' | '24h' | 'all';\n		height?: string;\n	}
+	interface Props {
+		data: DataPoint[];
+		timeRange?: '1h' | '6h' | '24h' | 'all';
+		height?: string;
+	}
 
 	let { data = [], timeRange = 'all', height = '300px' }: Props = $props();
 
