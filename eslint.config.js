@@ -91,7 +91,9 @@ export default [
 			'vitest.config.ts',
 			'html/',
 			'coverage/',
-			'src/lib/generated/**'
+			'src/lib/generated/**',
+			'marketing/',
+			'marketing/**/*'
 		]
 	}
 ];
