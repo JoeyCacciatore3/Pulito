@@ -23,6 +23,18 @@ vi.mock('$lib/stores/notifications.svelte', () => ({
 	}
 }));
 
+// Mock svelte's onMount to prevent lifecycle errors in tests
+vi.mock('svelte', async () => {
+	const actual = await vi.importActual('svelte');
+	return {
+		...actual,
+		onMount: vi.fn(() => {
+			// Return a cleanup function
+			return () => {};
+		})
+	};
+});
+
 import { invoke } from '$lib/utils/tauri';
 
 describe('SystemHealthMonitor', () => {
