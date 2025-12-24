@@ -70,8 +70,8 @@
 		]
 	});
 
-	// @ts-ignore: Chart.js type compatibility issues
 	let chartOptions = $derived(() => {
+		// @ts-ignore: Chart.js type compatibility issues
 		const defaultOptions = getDefaultChartOptions(isDark);
 		return {
 			...defaultOptions,

@@ -135,8 +135,8 @@
 
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
-		const defaultOptions = getDefaultChartOptions(isDark);
 		// @ts-ignore: Chart.js type compatibility issues
+		const defaultOptions = getDefaultChartOptions(isDark);
 		plugins: {
 			...(defaultOptions.plugins ?? {}),
 			tooltip: {
