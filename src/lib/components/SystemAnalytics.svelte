@@ -4,6 +4,8 @@
 	import NetworkTrafficChart from './charts/NetworkTrafficChart.svelte';
 	import DiskIOChart from './charts/DiskIOChart.svelte';
 	import TemperatureChart from './charts/TemperatureChart.svelte';
+	import LoadingSpinner from './ui/LoadingSpinner.svelte';
+	import ProgressBar from './ui/ProgressBar.svelte';
 
 	// Placeholder data until real implementation is added
 	let loading = $state(false);
@@ -20,9 +22,23 @@
 		network_down: 100_000_000, // 100MB
 		disk_read_bytes: 100_000_000, // 100MB
 		disk_write_bytes: 200_000_000, // 200MB
-		gpu_info: undefined,
-		top_processes: [],
-		load_average: undefined
+		gpu_info: {
+			name: 'NVIDIA GeForce RTX 3060',
+			usage: 35,
+			memory_used: 2_000_000_000, // 2GB
+			memory_total: 12_000_000_000, // 12GB
+			temperature: 58
+		},
+		top_processes: [
+			{ name: 'chrome', cpu_usage: 12.5 },
+			{ name: 'code', cpu_usage: 8.3 },
+			{ name: 'node', cpu_usage: 5.2 }
+		],
+		load_average: {
+			one_minute: 1.25,
+			five_minutes: 1.15,
+			fifteen_minutes: 1.05
+		}
 	});
 
 	function formatBytes(bytes: number): string {
@@ -44,6 +60,11 @@
 		if (value >= thresholds.critical) return 'text-red-600';
 		if (value >= thresholds.warning) return 'text-yellow-600';
 		return 'text-green-600';
+	}
+
+	function loadSystemMetrics(): void {
+		// Placeholder function - in real implementation this would fetch data
+		console.log('Loading system metrics...');
 	}
 
 </script>

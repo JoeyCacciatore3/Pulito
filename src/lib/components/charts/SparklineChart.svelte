@@ -85,6 +85,8 @@
 
 			return () => observer.disconnect();
 		}
+
+		return undefined;
 	});
 </script>
 

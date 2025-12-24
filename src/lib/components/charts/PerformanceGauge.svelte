@@ -74,11 +74,11 @@
 
 	// Watch for theme changes
 	onMount(() => {
-		const observer = new MutationObserver(() => {
-			isDark = document.documentElement.classList.contains('dark');
-		});
-
 		if (typeof document !== 'undefined') {
+			const observer = new MutationObserver(() => {
+				isDark = document.documentElement.classList.contains('dark');
+			});
+
 			observer.observe(document.documentElement, {
 				attributes: true,
 				attributeFilter: ['class']
@@ -86,6 +86,8 @@
 
 			return () => observer.disconnect();
 		}
+
+		return undefined;
 	});
 </script>
 
