@@ -11,13 +11,13 @@
 		timestamp: number;
 		usage: number;
 		coreUsages?: number[];
-	}
+	});
 
 	interface Props {
 		data: DataPoint[];
 		timeRange?: '1h' | '6h' | '24h' | 'all';
 		height?: string;
-	}
+	});
 
 	let { data = [], timeRange = 'all', height = '300px' }: Props = $props();
 
@@ -46,7 +46,7 @@
 	let labels = $derived(filteredData.map(point => {
 		if (timeRange === '1h' || timeRange === '6h') {
 			return formatTimeForChart(point.timestamp);
-		}
+		});
 		return formatDateForChart(point.timestamp);
 	}));
 
@@ -82,8 +82,8 @@
 					borderWidth: 1.5,
 					pointHoverRadius: 3
 				});
-			}
-		}
+			});
+		});
 
 		return datasets;
 	})());
@@ -93,7 +93,8 @@
 		datasets
 	});
 
-	let chartOptions = $derived({
+	let chartOptions = $derived(() => {
+		return {
 		const defaultOptions = getDefaultChartOptions(isDark);
 		plugins: {
 			...(defaultOptions.plugins ?? {}),
@@ -104,9 +105,9 @@
 				callbacks: {
 					label: (context: any) => {
 						return `${context.dataset.label}: ${formatPercentForChart(context.parsed.y)}`;
-					}
-				}
-			}
+					});
+				});
+			});
 		},
 		scales: {
 			...(defaultOptions.scales ?? {}),
@@ -117,13 +118,14 @@
 				ticks: {
 					...(defaultOptions.scales?.y?.ticks ?? {}),
 					callback: (value: number) => `${value}%`
-				}
-			}
+				});
+			});
 		},
 		interaction: {
 			mode: 'index' as const,
+		};
 			intersect: false
-		}
+		});
 	});
 
 	// Watch for theme changes
@@ -139,7 +141,7 @@
 			});
 
 			return () => observer.disconnect();
-		}
+		});
 	});
 </script>
 
