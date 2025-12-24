@@ -8,14 +8,12 @@ mod packages;
 mod scanner;
 mod trash;
 
+use db::AppState;
+
 use tauri::Manager;
 
 use std::sync::Mutex;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-pub struct AppState {
-    pub db: Mutex<Option<rusqlite::Connection>>,
-}
 
 fn main() {
     // Initialize comprehensive logging with structured formatting

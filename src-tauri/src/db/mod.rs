@@ -1,8 +1,12 @@
 use rusqlite::{Connection, Result};
 use std::path::PathBuf;
 use tauri::{AppHandle, Manager};
+use std::sync::Mutex;
 
-use crate::AppState;
+#[derive(Debug)]
+pub struct AppState {
+    pub db: Mutex<Option<rusqlite::Connection>>,
+}
 
 #[cfg(test)]
 mod tests {
