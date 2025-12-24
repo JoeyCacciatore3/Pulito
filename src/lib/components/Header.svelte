@@ -5,21 +5,43 @@
 	import { invoke, formatBytes } from '$lib/utils/tauri';
 	import { notificationStore } from '$lib/stores/notifications.svelte';
 	import { logger } from '$lib/utils/logger';
+	import { listen } from '@tauri-apps/api/event';
+
+	interface ScanProgressEvent {
+		category: string;
+		progress: number;
+		message: string;
+		items_found: number;
+		current_size: number;
+	}
 
 	async function handleScan() {
 		scanner.setScanning(true);
 		scanner.setProgress(0);
 
-		let progressInterval: ReturnType<typeof setInterval> | null = null;
+		// Calculate timeout based on scan options (matches backend logic)
+		// Comprehensive scans (caches + packages) get 15 minutes, basic scans get 10 minutes
+		const isComprehensiveScan = true; // All options enabled
+		const scanTimeout = isComprehensiveScan ? 900000 : 600000; // 15 min or 10 min
+
+		// Set up progress event listener
+		let unlisten: (() => void) | null = null;
 
 		try {
-			// Provide visual progress feedback while real scan runs in background
-			// Progress updates are UI-only; actual scan progress is tracked by backend
-			progressInterval = setInterval(() => {
-				scanner.setProgress(scanner.progress + Math.random() * 15);
-			}, 200);
+			// Listen to scan progress events from backend
+			unlisten = await listen<ScanProgressEvent>('scan-progress', (event) => {
+				const progress = event.payload;
+				scanner.setProgress(progress.progress);
+				logger.debug('Scan progress update', {
+					component: 'Header',
+					action: 'scan_progress',
+					category: progress.category,
+					progress: progress.progress,
+					message: progress.message
+				});
+			});
 
-			// 5 minute timeout for system scan
+			// Timeout matches backend: 15 minutes for comprehensive scans, 10 minutes for basic
 			const results = await invoke<ScanResults>('start_scan', {
 				options: {
 					include_caches: true,
@@ -27,23 +49,47 @@
 					include_large_files: true,
 					include_logs: true
 				}
-			}, 300000);
+			}, scanTimeout);
 
-			if (progressInterval) clearInterval(progressInterval);
+			// Clean up event listener
+			if (unlisten) {
+				unlisten();
+				unlisten = null;
+			}
+
 			scanner.setProgress(100);
 			scanner.setResults(results);
-			notificationStore.success('Scan Complete', `Found ${results.total_items} items totaling ${formatBytes(results.total_size)}`);
+
+			// Check for partial failures
+			if (results.failed_categories && results.failed_categories.length > 0) {
+				const failedCategories = results.failed_categories.map(fc => fc.category).join(', ');
+				notificationStore.warning(
+					'Scan Complete with Warnings',
+					`Found ${results.total_items} items totaling ${formatBytes(results.total_size)}. Some categories failed to scan: ${failedCategories}`
+				);
+			} else {
+				notificationStore.success('Scan Complete', `Found ${results.total_items} items totaling ${formatBytes(results.total_size)}`);
+			}
 		} catch (e) {
 			logger.error('Scan failed', { component: 'Header', action: 'handle_scan', operation: 'start_scan' }, e);
-			if (progressInterval) clearInterval(progressInterval);
+
+			// Clean up event listener on error
+			if (unlisten) {
+				unlisten();
+				unlisten = null;
+			}
 
 			const errorMessage = e instanceof Error
 				? (e.message.includes('timed out')
-					? 'Scan timed out. The system scan took too long to complete. Try scanning with fewer options enabled or try again later.'
+					? `Scan timed out after ${isComprehensiveScan ? '15' : '10'} minutes. The system scan took too long to complete. Try scanning with fewer options enabled or try again later.`
 					: e.message)
 				: 'System scan failed. Please try again.';
 			notificationStore.error('Scan Failed', errorMessage);
 		} finally {
+			// Ensure event listener is cleaned up
+			if (unlisten) {
+				unlisten();
+			}
 			scanner.setScanning(false);
 		}
 	}

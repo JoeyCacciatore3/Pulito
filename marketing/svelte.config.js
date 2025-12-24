@@ -16,7 +16,7 @@ const config = {
 			$lib: './src/lib'
 		},
 		prerender: {
-			entries: []
+			entries: ['/', '/download', '/features', '/faq', '/privacy', '/terms']
 		}
 	},
 	compilerOptions: {

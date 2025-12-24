@@ -4,10 +4,10 @@ This document explains the organization of the Pulito repository, clearly separa
 
 ## Overview
 
-This repository contains two distinct parts:
+This repository contains two completely separate parts:
 
-1. **Landing Page / Marketing Website** - Public-facing marketing site
-2. **Desktop Application** - Tauri-based desktop app for Linux system cleanup
+1. **Marketing Website** - Standalone SvelteKit app in `marketing/` folder (deployed to GitHub Pages)
+2. **Desktop Application** - Tauri-based desktop app in `src/` folder (bundled as desktop packages)
 
 ---
 
@@ -15,32 +15,49 @@ This repository contains two distinct parts:
 
 ```
 pulito/
-├── src/
+├── marketing/                    # 🎯 SEPARATE MARKETING SITE
+│   ├── src/
+│   │   ├── routes/
+│   │   │   ├── +page.svelte      # Landing page (/)
+│   │   │   ├── download/         # Download page (/download)
+│   │   │   ├── features/         # Features page (/features)
+│   │   │   ├── faq/              # FAQ page (/faq)
+│   │   │   ├── privacy/          # Privacy policy (/privacy)
+│   │   │   └── terms/            # Terms of service (/terms)
+│   │   ├── lib/
+│   │   │   └── utils/
+│   │   │       └── logger.ts     # Marketing utilities
+│   │   ├── app.css               # Marketing styles
+│   │   └── app.html              # Marketing HTML template
+│   ├── static/                   # Marketing static assets
+│   ├── package.json              # Marketing dependencies (no Tauri)
+│   ├── svelte.config.js          # Marketing SvelteKit config
+│   ├── vite.config.ts            # Marketing Vite config
+│   ├── tailwind.config.js        # Marketing Tailwind config
+│   └── README.md                 # Marketing-specific docs
+├── src/                          # 🎯 TAURI DESKTOP APP
 │   ├── routes/
-│   │   ├── +page.svelte          # Landing page (marketing site root)
-│   │   ├── +layout.svelte         # Root layout (shared for all routes)
-│   │   ├── app/                   # 🎯 DESKTOP APPLICATION
-│   │   │   ├── +page.svelte       # Main app interface
-│   │   │   └── +layout.svelte     # App-specific layout
-│   │   ├── download/              # Marketing: Download page
-│   │   ├── features/              # Marketing: Features page
-│   │   ├── faq/                   # Marketing: FAQ page
-│   │   ├── privacy/               # Marketing: Privacy policy
-│   │   └── terms/                 # Marketing: Terms of service
-│   └── lib/                       # Shared components and utilities
-│       ├── components/            # React components (used by app)
-│       ├── stores/                # State management
-│       └── utils/                 # Utility functions
-├── src-tauri/                     # Rust backend (desktop app only)
-├── static/                        # Static assets (shared)
-└── build/                         # Build output
+│   │   └── app/                  # Desktop app routes
+│   │       ├── +page.svelte      # Main app interface
+│   │       └── +layout.svelte    # App-specific layout
+│   ├── lib/                      # App components and utilities
+│   │   ├── components/           # App components (Dashboard, etc.)
+│   │   ├── stores/               # State management
+│   │   └── utils/                # App utilities (Tauri IPC, etc.)
+│   └── app.css                   # App styles
+├── src-tauri/                    # Rust backend (desktop app only)
+├── static/                       # Shared static assets
+├── package.json                  # Root package.json (app dependencies)
+└── build/                        # App build output (Tauri uses this)
 ```
 
 ---
 
-## 1. Landing Page / Marketing Website
+## 1. Marketing Website
 
 **Purpose:** Public-facing marketing website to promote Pulito
+
+**Location:** `marketing/` folder (completely separate from app)
 
 **Routes:**
 - `/` - Landing page (hero, features, testimonials)
@@ -50,25 +67,33 @@ pulito/
 - `/privacy` - Privacy policy
 - `/terms` - Terms of service
 
-**Location:** `src/routes/+page.svelte` and related route files
-
 **Access:**
-- **Web:** `http://localhost:5174/` (when running `npm run dev`)
-- **Production:** Deployed as static site (GitHub Pages, etc.)
+- **Development:** `cd marketing && npm run dev` → `http://localhost:5174/`
+- **Production:** Deploy `marketing/build/` to GitHub Pages or any static host
 
 **Key Files:**
-- `src/routes/+page.svelte` - Main landing page
-- `src/routes/features/+page.svelte` - Features showcase
-- `src/routes/download/+page.svelte` - Download page
-- `src/routes/faq/+page.svelte` - FAQ page
+- `marketing/src/routes/+page.svelte` - Main landing page
+- `marketing/src/routes/features/+page.svelte` - Features showcase
+- `marketing/src/routes/download/+page.svelte` - Download page
+- `marketing/src/routes/faq/+page.svelte` - FAQ page
 
 **Characteristics:**
+- ✅ Completely independent from desktop app
 - ✅ Public-facing, no authentication required
 - ✅ SEO optimized with meta tags
 - ✅ Responsive design for all devices
-- ✅ Static content (can be pre-rendered)
+- ✅ Static content (prerendered)
+- ✅ Zero Tauri dependencies
 - ❌ Does NOT use Tauri APIs
 - ❌ Does NOT access system resources
+
+**Build & Deploy:**
+```bash
+cd marketing
+npm install
+npm run build
+# Output: marketing/build/ → Deploy to GitHub Pages
+```
 
 ---
 
@@ -81,8 +106,7 @@ pulito/
 **Location:** `src/routes/app/`
 
 **Access:**
-- **Tauri Dev:** Automatically opens at `/app` when running `npm run tauri:dev`
-- **Web Dev:** `http://localhost:5174/app` (limited functionality, Tauri APIs unavailable)
+- **Tauri Dev:** `npm run tauri:dev` → Desktop window at `/app`
 - **Production:** Bundled as desktop app (`.deb`, `.AppImage`)
 
 **Key Files:**
@@ -111,16 +135,28 @@ pulito/
 - ❌ Cannot run in browser (Tauri APIs required)
 - ❌ Not accessible via web URL in production
 
+**Build & Deploy:**
+```bash
+npm install
+npm run tauri:build
+# Output: src-tauri/target/release/bundle/ → Desktop packages
+```
+
 ---
 
 ## Development Workflows
 
-### Running the Landing Page (Web)
+### Running the Marketing Site
 
 ```bash
+# From root directory
+npm run marketing:dev
+
+# Or from marketing directory
+cd marketing
+npm install
 npm run dev
 # Opens: http://localhost:5174/
-# Shows: Landing page at root (/)
 ```
 
 **Use Case:** Testing marketing pages, SEO, responsive design
@@ -135,21 +171,35 @@ npm run tauri:dev
 
 **Use Case:** Developing app features, testing Tauri APIs, system integration
 
-### Running Both (for testing)
+### Building Both
 
 ```bash
-# Terminal 1: Start dev server
-npm run dev
+# Build marketing site
+npm run marketing:build
+# Output: marketing/build/
 
-# Terminal 2: Start Tauri (uses dev server)
-npm run tauri:dev
+# Build desktop app
+npm run tauri:build
+# Output: Desktop packages
 ```
-
-**Note:** Tauri will automatically navigate to `/app` in the desktop window, while the browser can access both `/` (landing) and `/app` (app).
 
 ---
 
 ## Routing Configuration
+
+### Marketing Site
+
+The marketing site is a standalone SvelteKit application:
+- All routes are prerendered for static hosting
+- No server-side rendering needed
+- Deploys as static HTML/CSS/JS
+
+### Desktop App
+
+The desktop app uses SvelteKit routing but runs in Tauri:
+- Tauri config points to `/app` route
+- No prerendering (SSR disabled)
+- Requires Tauri runtime to function
 
 ### Tauri Configuration
 
@@ -166,25 +216,17 @@ The Tauri app is configured to open at `/app`:
 }
 ```
 
-### SvelteKit Routing
-
-SvelteKit automatically handles routing based on the `src/routes/` directory structure:
-
-- `/` → `src/routes/+page.svelte` (Landing page)
-- `/app` → `src/routes/app/+page.svelte` (Desktop app)
-- `/features` → `src/routes/features/+page.svelte` (Marketing)
-- `/download` → `src/routes/download/+page.svelte` (Marketing)
-
 ---
 
 ## Build Output
 
-### Landing Page Build
+### Marketing Site Build
 
 ```bash
+cd marketing
 npm run build
-# Output: build/
-# Contains: All routes pre-rendered as static HTML
+# Output: marketing/build/
+# Contains: All routes prerendered as static HTML
 # Deploy: Can be deployed to GitHub Pages, Netlify, etc.
 ```
 
@@ -201,70 +243,65 @@ npm run tauri:build
 
 ## Important Notes
 
-### ⚠️ Tauri API Availability
+### ⚠️ Complete Separation
 
-The desktop app (`/app`) **requires** Tauri APIs to function properly. When accessing `/app` in a regular browser:
+The marketing site and desktop app are **completely separate**:
 
-- ❌ Tauri APIs are unavailable
-- ❌ System operations will fail
-- ✅ UI will render but show errors
-- ✅ Use `npm run tauri:dev` for proper app development
+- **Marketing:** Independent SvelteKit app in `marketing/` folder
+- **App:** Tauri app in `src/` folder
+- **No shared code:** Marketing has its own dependencies and build process
+- **Independent deployment:** Marketing deploys separately from app
 
 ### 🔒 Security
 
-- Landing pages are public and don't require authentication
+- Marketing pages are public and don't require authentication
 - Desktop app has full system access (by design)
 - Tauri security policies apply to desktop app only
+- Marketing site has zero system access
 
 ### 📦 Dependencies
 
-- **Landing Page:** Only frontend dependencies (Svelte, Tailwind)
+- **Marketing:** Only frontend dependencies (Svelte, Tailwind) - no Tauri
 - **Desktop App:** Frontend + Tauri + Rust backend dependencies
 
 ---
 
 ## Quick Reference
 
-| Aspect | Landing Page | Desktop App |
-|--------|-------------|-------------|
-| **Route** | `/` | `/app` |
-| **Dev Command** | `npm run dev` | `npm run tauri:dev` |
+| Aspect | Marketing Site | Desktop App |
+|--------|---------------|-------------|
+| **Location** | `marketing/` | `src/` |
+| **Route** | `/` (and marketing pages) | `/app` |
+| **Dev Command** | `npm run marketing:dev` | `npm run tauri:dev` |
+| **Build Command** | `npm run marketing:build` | `npm run tauri:build` |
 | **URL** | `http://localhost:5174/` | Desktop window |
 | **Tauri APIs** | ❌ No | ✅ Yes |
 | **System Access** | ❌ No | ✅ Yes |
 | **Purpose** | Marketing | Application |
-| **Deployment** | Static site | Desktop packages |
+| **Deployment** | Static site (GitHub Pages) | Desktop packages |
 
 ---
 
-## Future Improvements
+## Benefits of Separate Structure
 
-Consider these organizational improvements:
-
-1. **Separate Repositories:**
-   - `pulito-website` - Marketing site
-   - `pulito-app` - Desktop application
-
-2. **Monorepo Structure:**
-   ```
-   packages/
-     ├── website/     # Landing page
-     └── app/         # Desktop app
-   ```
-
-3. **Shared Components:**
-   - Extract truly shared components to `packages/shared/`
-   - Keep app-specific components in app directory
+1. **Zero Risk of Mixing**: Physically impossible to accidentally include app code in marketing
+2. **Independent Deployment**: Marketing deploys without any app dependencies
+3. **Clear Boundaries**: Obvious where marketing code ends and app code begins
+4. **Independent Development**: Can work on marketing without app dependencies
+5. **Future Flexibility**: Easy to move marketing to separate repo if needed
+6. **Cleaner Dependencies**: Marketing doesn't need Tauri, Rust, or app-specific packages
+7. **Better CI/CD**: Separate build and deployment pipelines
+8. **Team Collaboration**: Different teams can work independently
 
 ---
 
 ## Questions?
 
-- **Landing page issues?** Check `src/routes/+page.svelte`
+- **Marketing site issues?** Check `marketing/` directory and `marketing/README.md`
 - **App not working?** Ensure you're running `npm run tauri:dev` (not `npm run dev`)
 - **Routing problems?** Verify Tauri config points to `/app`
-- **Build issues?** Check `svelte.config.js` and `src-tauri/tauri.conf.json`
+- **Build issues?** Check respective config files (`marketing/svelte.config.js` or root `svelte.config.js`)
 
 ---
 
-**Last Updated:** December 21, 2025
+**Last Updated:** December 2025

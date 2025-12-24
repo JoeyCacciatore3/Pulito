@@ -21,7 +21,10 @@
     "format": "prettier --write .",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "generate-types": "tauri build --no-bundle"
+    "generate-types": "tauri build --no-bundle",
+    "marketing:dev": "cd marketing && npm run dev",
+    "marketing:build": "cd marketing && npm run build",
+    "marketing:preview": "cd marketing && npm run preview"
   },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.10",

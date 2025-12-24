@@ -10,6 +10,7 @@ use walkdir::WalkDir;
 use anyhow::{Context, Result as AnyhowResult};
 use tokio::time::timeout;
 use thiserror::Error;
+use tauri::Emitter;
 
 use crate::trash;
 
@@ -40,8 +41,9 @@ pub struct ScanLimits {
 }
 
 /// Check if current memory usage is within limits
+/// Uses process-specific memory tracking for accurate measurement
 async fn check_memory_limits(limits: &ScanLimits) -> Result<(), ScannerError> {
-    use sysinfo::System;
+    use sysinfo::{System, Pid};
 
     // Use blocking task for system memory check (sysinfo operations are synchronous)
     let memory_limit_mb = limits.max_memory_mb;
@@ -49,12 +51,21 @@ async fn check_memory_limits(limits: &ScanLimits) -> Result<(), ScannerError> {
         let mut system = System::new();
         system.refresh_memory();
 
-        // Get current process memory usage in MB
-        // Note: We check system-wide used memory as an approximation
-        // For more precise process memory, we could use system.refresh_process(process_id)
-        // but that requires tracking the process ID, which adds complexity
-        let used_memory_bytes = system.used_memory();
-        let used_memory_mb = used_memory_bytes / (1024 * 1024);
+        // Get current process ID
+        let pid = Pid::from(std::process::id() as usize);
+
+        // Refresh all processes to get current process info
+        system.refresh_all();
+
+        // Try to get process-specific memory usage
+        let used_memory_mb = if let Some(process) = system.process(pid) {
+            // Process found, use its memory usage
+            let memory_bytes = process.memory();
+            memory_bytes / (1024 * 1024) // Convert to MB
+        } else {
+            // Fallback to system-wide memory if process not found
+            system.used_memory() / (1024 * 1024)
+        };
 
         Ok(used_memory_mb)
     }).await
@@ -91,12 +102,21 @@ pub struct ScanItem {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[specta(export)]
+pub struct FailedCategory {
+    pub category: String,
+    pub error: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[specta(export)]
 pub struct ScanResults {
     pub items: Vec<ScanItem>,
     pub total_size: u64,
     pub total_items: usize,
     pub scan_time_ms: u64,
     pub timestamp: String,
+    #[serde(default)]
+    pub failed_categories: Vec<FailedCategory>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -106,6 +126,12 @@ pub struct ScanOptions {
     pub include_packages: bool,
     pub include_large_files: bool,
     pub include_logs: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_files: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_depth: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max_memory_mb: Option<usize>,
 }
 
 impl Default for ScanOptions {
@@ -115,33 +141,93 @@ impl Default for ScanOptions {
             include_packages: true,
             include_large_files: true,
             include_logs: true,
+            max_files: None,
+            max_depth: None,
+            max_memory_mb: None,
         }
     }
 }
 
+/// Progress event structure for real-time scan updates
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ScanProgress {
+    pub category: String,
+    pub progress: u8, // 0-100
+    pub message: String,
+    pub items_found: usize,
+    pub current_size: u64,
+}
+
 /// Async version of main scan function with proper error handling and memory bounds
-pub async fn scan_system_async(options: &ScanOptions) -> Result<ScanResults, ScannerError> {
+/// Emits progress events via app_handle if provided
+pub async fn scan_system_async(
+    options: &ScanOptions,
+    app_handle: Option<&tauri::AppHandle>,
+) -> Result<ScanResults, ScannerError> {
     let start = Instant::now();
 
-    // Set memory and time limits for the scan
+    // Set memory and time limits for the scan (use provided limits or defaults)
     let scan_limits = ScanLimits {
-        max_files: 50_000, // Limit to prevent excessive memory usage
-        max_depth: 10,     // Prevent infinite recursion
-        max_memory_mb: 500, // 500MB memory limit
-        timeout_seconds: 300, // 5 minute timeout
+        max_files: options.max_files.unwrap_or(50_000), // Limit to prevent excessive memory usage
+        max_depth: options.max_depth.unwrap_or(10),     // Prevent infinite recursion
+        max_memory_mb: options.max_memory_mb.unwrap_or(500), // 500MB memory limit
+        timeout_seconds: 300, // 5 minute timeout (internal, not configurable)
     };
 
     let mut items = Vec::new();
     let mut total_size: u64 = 0;
     let mut total_items: usize = 0;
+    let mut failed_categories = Vec::new();
+
+    // Calculate total number of scan phases for progress tracking
+    let total_phases = [
+        options.include_caches,
+        options.include_packages,
+        options.include_logs,
+        options.include_large_files,
+    ]
+    .iter()
+    .filter(|&&enabled| enabled)
+    .count();
+
+    let mut completed_phases = 0;
 
     // Check memory usage periodically
     let memory_check_interval = Duration::from_secs(10);
     let mut last_memory_check = start;
 
+    // Helper function to emit progress events
+    // Note: We pass completed_phases as a parameter to avoid borrowing issues
+    let emit_progress = |category: &str, phase_progress: u8, message: &str, items_found: usize, current_size: u64, phases_completed: usize| {
+        if let Some(handle) = app_handle {
+            let overall_progress = if total_phases > 0 {
+                ((phases_completed * 100 + phase_progress as usize) / total_phases).min(100) as u8
+            } else {
+                0
+            };
+
+            let progress_event = ScanProgress {
+                category: category.to_string(),
+                progress: overall_progress,
+                message: message.to_string(),
+                items_found,
+                current_size,
+            };
+
+            if let Err(e) = handle.emit("scan-progress", &progress_event) {
+                tracing::warn!("Failed to emit scan progress event: {}", e);
+            }
+        }
+    };
+
     if options.include_caches {
+        emit_progress("caches", 0, "Scanning cache directories...", 0, 0, completed_phases);
+
         match scan_caches_async(&scan_limits).await {
             Ok(cache_items) => {
+                let cache_size: u64 = cache_items.iter().map(|i| i.size).sum();
+                let cache_count = cache_items.len();
+
                 for item in &cache_items {
                     total_size += item.size;
                     total_items += 1;
@@ -150,82 +236,133 @@ pub async fn scan_system_async(options: &ScanOptions) -> Result<ScanResults, Sca
                     }
                 }
                 items.extend(cache_items);
+
+                completed_phases += 1;
+                emit_progress("caches", 100, &format!("Found {} cache items", cache_count), cache_count, cache_size, completed_phases);
             }
             Err(e) => {
                 tracing::warn!("Cache scanning failed: {}", e);
+                failed_categories.push(FailedCategory {
+                    category: "caches".to_string(),
+                    error: e.to_string(),
+                });
+                completed_phases += 1;
+                emit_progress("caches", 100, &format!("Cache scan failed: {}", e), 0, 0, completed_phases);
                 // Continue with other scans even if cache scan fails
             }
         }
 
         // Check memory usage
-        if start.elapsed().saturating_sub(last_memory_check.elapsed()) > memory_check_interval {
+        let now = Instant::now();
+        if now.duration_since(last_memory_check) > memory_check_interval {
             if let Err(e) = check_memory_limits(&scan_limits).await {
                 return Err(ScannerError::MemoryLimitExceeded(e.to_string()));
             }
-            last_memory_check = Instant::now();
+            last_memory_check = now;
         }
     }
 
     if options.include_packages {
+        emit_progress("packages", 0, "Scanning package caches...", 0, 0, completed_phases);
+
         match scan_package_caches_async().await {
             Ok(package_items) => {
+                let package_size: u64 = package_items.iter().map(|i| i.size).sum();
+                let package_count = package_items.len();
+
                 for item in &package_items {
                     total_size += item.size;
                     total_items += 1;
                 }
                 items.extend(package_items);
+
+                completed_phases += 1;
+                emit_progress("packages", 100, &format!("Found {} package cache items", package_count), package_count, package_size, completed_phases);
             }
             Err(e) => {
                 tracing::warn!("Package cache scanning failed: {}", e);
+                failed_categories.push(FailedCategory {
+                    category: "packages".to_string(),
+                    error: e.to_string(),
+                });
+                completed_phases += 1;
+                emit_progress("packages", 100, &format!("Package scan failed: {}", e), 0, 0, completed_phases);
             }
         }
 
         // Check memory usage
-        if start.elapsed().saturating_sub(last_memory_check.elapsed()) > memory_check_interval {
+        let now = Instant::now();
+        if now.duration_since(last_memory_check) > memory_check_interval {
             if let Err(e) = check_memory_limits(&scan_limits).await {
                 return Err(ScannerError::MemoryLimitExceeded(e.to_string()));
             }
-            last_memory_check = Instant::now();
+            last_memory_check = now;
         }
     }
 
     if options.include_logs {
+        emit_progress("logs", 0, "Scanning log files...", 0, 0, completed_phases);
+
         match scan_logs_async(&scan_limits).await {
             Ok(log_items) => {
+                let log_size: u64 = log_items.iter().map(|i| i.size).sum();
+                let log_count = log_items.len();
+
                 for item in &log_items {
                     total_size += item.size;
                     total_items += 1;
                 }
                 items.extend(log_items);
+
+                completed_phases += 1;
+                emit_progress("logs", 100, &format!("Found {} log files", log_count), log_count, log_size, completed_phases);
             }
             Err(e) => {
                 tracing::warn!("Log scanning failed: {}", e);
+                failed_categories.push(FailedCategory {
+                    category: "logs".to_string(),
+                    error: e.to_string(),
+                });
+                completed_phases += 1;
+                emit_progress("logs", 100, &format!("Log scan failed: {}", e), 0, 0, completed_phases);
             }
         }
 
         // Check memory usage
-        if start.elapsed().saturating_sub(last_memory_check.elapsed()) > memory_check_interval {
+        let now = Instant::now();
+        if now.duration_since(last_memory_check) > memory_check_interval {
             if let Err(e) = check_memory_limits(&scan_limits).await {
                 return Err(ScannerError::MemoryLimitExceeded(e.to_string()));
             }
-            #[allow(unused_assignments)]
-            {
-                last_memory_check = Instant::now();
-            }
+            last_memory_check = now;
         }
     }
 
     if options.include_large_files {
+        emit_progress("large_files", 0, "Scanning for large files...", 0, 0, completed_phases);
+
         match scan_large_files_async(&scan_limits).await {
             Ok(large_files) => {
+                let large_size: u64 = large_files.iter().map(|i| i.size).sum();
+                let large_count = large_files.len();
+
                 for item in &large_files {
                     total_size += item.size;
                     total_items += 1;
                 }
                 items.extend(large_files);
+
+                completed_phases += 1;
+                emit_progress("large_files", 100, &format!("Found {} large files", large_count), large_count, large_size, completed_phases);
             }
             Err(e) => {
                 tracing::warn!("Large files scanning failed: {}", e);
+                failed_categories.push(FailedCategory {
+                    category: "large_files".to_string(),
+                    error: e.to_string(),
+                });
+                completed_phases += 1;
+                emit_progress("large_files", 100, &format!("Large files scan failed: {}", e), 0, 0, completed_phases);
             }
         }
     }
@@ -235,12 +372,16 @@ pub async fn scan_system_async(options: &ScanOptions) -> Result<ScanResults, Sca
     // Final memory check
     check_memory_limits(&scan_limits).await?;
 
+    // Emit final completion event
+    emit_progress("complete", 100, &format!("Scan complete: {} items found", total_items), total_items, total_size, completed_phases);
+
     Ok(ScanResults {
         items,
         total_size,
         total_items,
         scan_time_ms: elapsed.as_millis() as u64,
         timestamp: chrono::Utc::now().to_rfc3339(),
+        failed_categories,
     })
 }
 

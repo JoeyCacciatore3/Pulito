@@ -2,7 +2,12 @@
 
 ## Overview
 
-Pulito is a desktop application built with Tauri 2.2+, combining a Rust backend with a Svelte 5 frontend. The architecture follows a clean separation of concerns with IPC communication between frontend and backend.
+Pulito consists of two separate applications:
+
+1. **Marketing Website** - Standalone SvelteKit app in `marketing/` folder (deployed to GitHub Pages)
+2. **Desktop Application** - Tauri app in `src/` folder (bundled as desktop packages)
+
+This document describes the **Desktop Application** architecture. The desktop app is built with Tauri 2.2+, combining a Rust backend with a Svelte 5 frontend. The architecture follows a clean separation of concerns with IPC communication between frontend and backend.
 
 ## Technology Stack
 
@@ -22,6 +27,12 @@ Pulito is a desktop application built with Tauri 2.2+, combining a Rust backend 
 - **Logging**: tracing + tracing-subscriber
 
 ## Architecture Overview
+
+**Note:** This repository contains two separate applications:
+1. **Marketing Site** - Standalone SvelteKit app in `marketing/` folder
+2. **Desktop App** - Tauri app in `src/` folder (architecture below)
+
+### Desktop Application Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -95,15 +106,9 @@ src/
 │       ├── confirmations.ts # Confirmation dialog helpers
 │       └── notification-helpers.ts
 ├── routes/                  # SvelteKit file-based routing
-│   ├── +page.svelte         # Marketing landing page
-│   ├── app/                 # Desktop app interface
-│   │   ├── +layout.svelte
-│   │   └── +page.svelte
-│   ├── download/
-│   ├── features/
-│   ├── faq/
-│   ├── privacy/
-│   └── terms/
+│   └── app/                 # Desktop app interface
+│       ├── +layout.svelte
+│       └── +page.svelte
 └── test/                    # Test setup
     └── setup.ts
 ```
@@ -358,21 +363,65 @@ See [database.md](database.md) for complete schema documentation.
 ## Build Process
 
 ### Development
+
+#### Desktop Application
 ```bash
 npm run tauri:dev  # Hot reload for frontend, incremental Rust compilation
 ```
 
-### Production
+#### Marketing Website
 ```bash
-npm run build           # Build frontend
-npm run tauri:build     # Build complete desktop app
+npm run marketing:dev  # Run marketing site in development mode
+# Opens at http://localhost:5174/
+```
+
+### Production
+
+#### Desktop Application
+```bash
+npm run build           # Build app frontend
+npm run tauri:build     # Build complete desktop app (.deb, .AppImage)
+```
+
+#### Marketing Website
+```bash
+npm run marketing:build  # Build static marketing site
+# Output: marketing/build/
 ```
 
 ## Deployment
 
+### Desktop Application
+
 - **Format**: .deb, AppImage
 - **Target**: Linux (Ubuntu 22.04+)
 - **Dependencies**: Bundled in AppImage, system packages for .deb
+- **Build**: `npm run tauri:build`
+- **Output**: `src-tauri/target/release/bundle/`
+
+### Marketing Website
+
+- **Format**: Static HTML/CSS/JS
+- **Target**: GitHub Pages, Netlify, Vercel, or any static hosting
+- **Build**: `npm run marketing:build`
+- **Output**: `marketing/build/`
+- **Automatic Deployment**: GitHub Actions workflows (`.github/workflows/pages.yml`)
+
+#### GitHub Pages Deployment
+
+The marketing site is automatically deployed to GitHub Pages via GitHub Actions:
+
+1. **Automatic**: On push to `main` branch, the workflow builds and deploys
+2. **Manual**: Use `workflow_dispatch` in GitHub Actions tab
+3. **Configuration**:
+   - Workflow builds from `marketing/` directory
+   - Output directory: `marketing/build/`
+   - Includes `.nojekyll` file for proper SPA routing
+
+To enable:
+- Go to repository Settings → Pages
+- Set source to "GitHub Actions"
+- The workflow handles the rest automatically
 
 ## Future Enhancements
 

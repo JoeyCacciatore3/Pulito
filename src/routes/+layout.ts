@@ -1,3 +1,3 @@
-// Marketing pages should be prerendered for static hosting
-// The /app route has its own layout.ts that disables SSR/prerender
-export const prerender = true;
+// App route - disable SSR/prerender for Tauri compatibility
+export const ssr = false;
+export const prerender = false;

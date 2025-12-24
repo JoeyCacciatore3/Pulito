@@ -52,24 +52,31 @@ A production-ready, enterprise-grade Linux system monitoring and cleanup tool bu
 
 ## 🌐 Repository Structure
 
-This repository contains **two distinct parts**:
+This repository contains **two completely separate parts**:
 
-### 1. Landing Page / Marketing Website
-- **Route:** `/` (root)
+### 1. Marketing Website
+- **Location:** `marketing/` folder (standalone SvelteKit app)
 - **Purpose:** Public-facing marketing site
-- **Pages:** Landing, Features, Download, FAQ, Privacy, Terms
-- **Access:** `http://localhost:5174/` (when running `npm run dev`)
+- **Pages:** Landing (`/`), Features, Download, FAQ, Privacy, Terms
+- **Development:** `npm run marketing:dev` or `cd marketing && npm run dev`
+- **Build:** `npm run marketing:build` → `marketing/build/`
 - **Deployment:** Static site (GitHub Pages, Netlify, etc.)
+- **Dependencies:** Svelte, SvelteKit, Tailwind (no Tauri)
 
 ### 2. Desktop Application
+- **Location:** `src/` folder (Tauri app)
 - **Route:** `/app`
 - **Purpose:** Full-featured desktop application
-- **Access:** Desktop window (when running `npm run tauri:dev`)
+- **Development:** `npm run tauri:dev` → Desktop window
+- **Build:** `npm run tauri:build` → Desktop packages
 - **Deployment:** Desktop packages (`.deb`, `.AppImage`)
+- **Dependencies:** Svelte, Tauri, Rust backend
 
 **📖 For detailed structure documentation, see [REPOSITORY_STRUCTURE.md](./REPOSITORY_STRUCTURE.md)**
 
-**Important:** The desktop app requires Tauri runtime. Use `npm run tauri:dev` to run the app, not `npm run dev` (which only shows the landing page).
+**Important:**
+- Marketing site: `npm run marketing:dev` (or `cd marketing && npm run dev`)
+- Desktop app: `npm run tauri:dev` (requires Tauri runtime)
 
 ## 🧹 **Advanced Cleanup Operations**
 
@@ -195,28 +202,49 @@ npm run tauri:build
 ### Building the Marketing Site
 
 ```bash
-# Build static site for web deployment
-npm run build
+# Build static site for web deployment from the marketing directory
+npm run marketing:build
 
 # Preview the built site locally
-npm run preview
+npm run marketing:preview
 
-# The built site will be in the `build/` directory
+# The built site will be in the `marketing/build/` directory
 ```
 
 ### Web Deployment
 
-The marketing site can be deployed to GitHub Pages automatically via the GitHub Actions workflow (`.github/workflows/deploy-pages.yml`).
+The marketing site can be deployed to GitHub Pages or any static hosting service.
+
+#### Automatic Deployment (GitHub Pages)
+
+The repository includes GitHub Actions workflows that automatically deploy the marketing site to GitHub Pages:
+
+- **Workflow files**: `.github/workflows/pages.yml` and `.github/workflows/deploy-pages.yml`
+- **Trigger**: Automatically runs on pushes to `main` branch
+- **Build location**: `marketing/build/` directory
+- **Deployment**: Automatically deploys to GitHub Pages
+
+To enable GitHub Pages:
+1. Go to repository Settings → Pages
+2. Set source to "GitHub Actions"
+3. The workflow will automatically deploy on push to `main`
+
+#### Manual Deployment
 
 To deploy manually:
 
 ```bash
-# Build the site
-npm run build
+# Build the marketing site
+npm run marketing:build
 
-# The build output is in the `build/` directory
-# Deploy this to your static hosting service
+# The build output is in the `marketing/build/` directory
+# Deploy this to your static hosting service (GitHub Pages, Netlify, Vercel, etc.)
 ```
+
+For GitHub Pages manual deployment:
+1. Build the site: `npm run marketing:build`
+2. Copy contents of `marketing/build/` to `gh-pages` branch root
+3. Push to `gh-pages` branch
 
 ## 🏗️ **Architecture & Design**
 
@@ -228,17 +256,13 @@ See [docs/architecture.md](docs/architecture.md) for detailed architecture docum
 
 ```
 pulito/
-├── src/                          # Svelte 5 frontend
+├── src/                          # Svelte 5 frontend for the Desktop Application
 │   ├── lib/
 │   │   ├── components/           # Reusable UI components
 │   │   ├── stores/               # Svelte 5 rune-based state management
 │   │   └── utils/                # Type-safe utilities and Tauri IPC
 │   ├── routes/                   # SvelteKit file-based routing
-│   │   ├── +page.svelte          # Marketing landing page
-│   │   ├── app/                  # Desktop app interface
-│   │   ├── download/             # Download page
-│   │   ├── features/             # Features page
-│   │   └── faq/                  # FAQ page
+│   │   └── app/                  # Desktop app interface (main application route)
 │   └── test/                     # Frontend test setup and utilities
 ├── src-tauri/                    # Rust backend with Tauri 2.x
 │   ├── src/

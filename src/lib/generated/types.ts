@@ -20,6 +20,8 @@ export type DiskPulseHealth = { disk_usage_percent: number; projected_days_until
 
 export type DuplicateGroup = { id: string; files: ScanItem[]; total_size: number; group_size: number }
 
+export type FailedCategory = { category: string; error: string }
+
 export type FilesystemHealthResults = { empty_directories: ScanItem[]; broken_symlinks: ScanItem[]; orphaned_temp_files: ScanItem[]; total_size: number; total_items: number }
 
 export type GpuInfo = { name: string; usage: number; memory_used: number; memory_total: number; temperature: number | undefined }
@@ -40,9 +42,9 @@ export type ProcessInfo = { pid: number; name: string; cpu_usage: number; memory
 
 export type ScanItem = { id: string; name: string; path: string; size: number; type: string; category: string; risk_level: number; description: string; children?: ScanItem[] | undefined; dependencies?: string[] | undefined; dependents?: string[] | undefined }
 
-export type ScanOptions = { include_caches: boolean; include_packages: boolean; include_large_files: boolean; include_logs: boolean }
+export type ScanOptions = { include_caches: boolean; include_packages: boolean; include_large_files: boolean; include_logs: boolean; max_files?: number | undefined; max_depth?: number | undefined; max_memory_mb?: number | undefined }
 
-export type ScanResults = { items: ScanItem[]; total_size: number; total_items: number; scan_time_ms: number; timestamp: string }
+export type ScanResults = { items: ScanItem[]; total_size: number; total_items: number; scan_time_ms: number; timestamp: string; failed_categories?: FailedCategory[] }
 
 export type ScanSettings = { include_hidden: boolean; large_file_threshold_mb: number }
 

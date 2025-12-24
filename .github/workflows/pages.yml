@@ -27,12 +27,19 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+          cache-dependency-path: 'marketing/package-lock.json'
 
-      - name: Install dependencies
+      - name: Install marketing dependencies
+        working-directory: marketing
         run: npm ci
 
-      - name: Build
+      - name: Build marketing site
+        working-directory: marketing
         run: npm run build
+
+      - name: Add .nojekyll file
+        working-directory: marketing
+        run: touch build/.nojekyll
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
@@ -40,7 +47,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './build'
+          path: 'marketing/build'
 
   deploy:
     environment:

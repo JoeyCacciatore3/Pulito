@@ -928,7 +928,7 @@ pub async fn get_system_health() -> Result<SystemHealthData, String> {
 
 #[allow(dead_code)]
 #[tauri::command]
-pub async fn start_scan(options: ScanOptions) -> Result<ScanResults, String> {
+pub async fn start_scan(app_handle: tauri::AppHandle, options: ScanOptions) -> Result<ScanResults, String> {
     tracing::info!("Starting system scan with async operations");
 
     // Set timeout based on scan options (more comprehensive scans get more time)
@@ -939,7 +939,7 @@ pub async fn start_scan(options: ScanOptions) -> Result<ScanResults, String> {
     };
 
     match timeout(scan_timeout, async {
-        scanner::scan_system_async(&options).await
+        scanner::scan_system_async(&options, Some(&app_handle)).await
     }).await {
         Ok(Ok(results)) => {
             tracing::info!("Async scan complete: {} items, {} bytes", results.total_items, results.total_size);
