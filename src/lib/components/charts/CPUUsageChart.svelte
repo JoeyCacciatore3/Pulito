@@ -11,13 +11,13 @@
 		timestamp: number;
 		usage: number;
 		coreUsages?: number[];
-	}
+	};
 
 	interface Props {
 		data: DataPoint[];
 		timeRange?: '1h' | '6h' | '24h' | 'all';
 		height?: string;
-	}
+	};
 	let { data = [], timeRange = 'all', height = '300px' }: Props = $props();
 
 	let isDark = $derived(
@@ -46,7 +46,7 @@
 		if (timeRange === '1h' || timeRange === '6h') {
 			return formatTimeForChart(point.timestamp);
 		} else {
-		}
+		};
 		return formatDateForChart(point.timestamp);
 	}));
 
@@ -86,7 +86,8 @@
 		return datasets;
 	});
 
-	let chartData = $derived({
+	let chartData = $derived(() => {
+		return {
 		labels,
 		datasets
 	});
