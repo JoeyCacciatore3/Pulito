@@ -7,16 +7,7 @@
 
 	Chart.register(...registerables);
 
-	interface DataPoint {
-		timestamp: number;
-		usage: number;
-		coreUsages?: number[];
-	interface Props {
-		data: DataPoint[];
-		timeRange?: '1h' | '6h' | '24h' | 'all';
-		height?: string;
-	}
-
+	interface DataPoint {\n		timestamp: number;\n		usage: number;\n		coreUsages?: number[];\n	}\n\n	interface Props {\n		data: DataPoint[];\n		timeRange?: '1h' | '6h' | '24h' | 'all';\n		height?: string;\n	}
 	let { data = [], timeRange = 'all', height = '300px' }: Props = $props();
 
 	let isDark = $derived(
