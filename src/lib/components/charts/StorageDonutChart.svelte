@@ -1,4 +1,5 @@
 <script lang="ts">
+	/* eslint-disable @typescript-eslint/no-explicit-any */
 	import { onMount } from 'svelte';
 	import { Doughnut } from 'svelte5-chartjs';
 	import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
