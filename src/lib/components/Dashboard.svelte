@@ -338,17 +338,7 @@
 			<!-- Storage Breakdown -->
 			<div class="lg:col-span-2 card p-6">
 				<h2 class="font-semibold mb-4">Storage Breakdown</h2>
-				<StorageDonutChart
-					totalDiskSpace={stats.total_disk_space}
-					usedDiskSpace={stats.used_disk_space}
-					cacheSize={stats.cache_size}
-					orphanPackagesSize={stats.orphan_packages_size}
-					cleanableSpace={stats.cleanable_space}
-					onSegmentClick={(segment) => {
-						if (segment === 'caches' || segment === 'packages' || segment === 'logs') {
-							navigation.set('cleanup');
-						}
-					}}
+				<StorageDonutChart\n					data={[60, 30, 10]}\n					height={200}\n				/>
 				/>
 			</div>
 
