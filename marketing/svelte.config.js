@@ -12,11 +12,21 @@ const config = {
 			precompress: false,
 			strict: true
 		}),
+		paths: {
+			base: '/Pulito'
+		},
 		alias: {
 			$lib: './src/lib'
 		},
 		prerender: {
-			entries: ['/', '/download', '/features', '/faq', '/privacy', '/terms']
+			entries: ['*'],
+			handleHttpError: ({ path, referrer, message }) => {
+				// Ignore errors for paths that don't include base - SvelteKit will handle these via routing
+				if (message.includes('does not begin with `base`')) {
+					return;
+				}
+				throw new Error(message);
+			}
 		}
 	},
 	compilerOptions: {

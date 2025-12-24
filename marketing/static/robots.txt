@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://joeycacciatore3.github.io/pulito/sitemap.xml
+Sitemap: https://joeycacciatore3.github.io/Pulito/sitemap.xml

@@ -33,12 +33,12 @@ log_error() {
 get_latest_version() {
     local api_url="https://api.github.com/repos/JoeyCacciatore3/pulito/releases/latest"
     local version
-    
+
     log_info "Detecting latest version from GitHub..."
-    
+
     # Try to fetch latest version with timeout
     version=$(curl -s --max-time 5 --connect-timeout 3 "$api_url" 2>/dev/null | grep -oP '"tag_name":\s*"v?\K[^"]+' | head -1)
-    
+
     if [[ -z "$version" ]]; then
         log_warning "Could not detect latest version from GitHub API"
         log_info "Using fallback version: 1.0.0"
@@ -215,17 +215,17 @@ install_package() {
     case $PACKAGE_TYPE in
         deb)
             log_info "Installing Debian package..."
-            
+
             # Check if Pulito is already installed (for upgrade detection)
             if dpkg -l | grep -q "^ii.*pulito"; then
                 INSTALLED_VERSION=$(dpkg -l | grep "^ii.*pulito" | awk '{print $3}')
                 log_info "Existing installation detected: version $INSTALLED_VERSION"
                 log_info "Upgrading to version $PULITO_VERSION..."
             fi
-            
+
             sudo dpkg -i "$PACKAGE_NAME"
             sudo apt-get install -f  # Fix any missing dependencies
-            
+
             # Verify installation/upgrade success
             if dpkg -l | grep -q "^ii.*pulito"; then
                 NEW_VERSION=$(dpkg -l | grep "^ii.*pulito" | awk '{print $3}')
@@ -246,7 +246,7 @@ install_package() {
             ;;
         appimage)
             log_info "Installing AppImage..."
-            
+
             # Remove old AppImage versions if they exist (upgrade handling)
             if ls ~/Applications/pulito_*.AppImage 1> /dev/null 2>&1; then
                 log_info "Removing old AppImage version(s)..."
@@ -255,11 +255,11 @@ install_package() {
                 rm -f ~/.local/share/applications/pulito.desktop
                 log_success "Old version removed"
             fi
-            
+
             chmod +x "$PACKAGE_NAME"
             mkdir -p ~/Applications
             mv "$PACKAGE_NAME" ~/Applications/pulito_${PULITO_VERSION}_amd64.AppImage
-            
+
             # Create desktop entry with versioned filename
             cat > ~/.local/share/applications/pulito.desktop << EOF
 [Desktop Entry]
