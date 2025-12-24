@@ -55,20 +55,6 @@
 			hasScanned: true
 		});
 
-		// System Analytics - real-time monitoring
-		cats.push({
-			id: 'analytics',
-			title: 'System Analytics',
-			description: 'Real-time performance monitoring and health insights',
-			icon: '📊',
-			color: 'bg-gradient-to-r from-green-100 to-blue-100 border-green-200 text-green-800',
-			estimatedSavings: null,
-			itemCount: 0,
-			riskLevel: 'safe',
-			action: 'View Analytics',
-			route: 'analytics',
-			hasScanned: false
-		});
 
 		return cats;
 	}
@@ -278,9 +264,6 @@
 				<div class="flex gap-2">
 					<button class="btn btn-secondary" onclick={startQuickClean}>
 						Smart Clean
-					</button>
-					<button class="btn btn-primary" onclick={() => navigation.set('analytics')}>
-						System Analytics
 					</button>
 				</div>
 			</div>

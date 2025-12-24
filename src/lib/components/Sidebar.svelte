@@ -54,7 +54,6 @@
 	const navItems: { id: View; label: string; icon: string }[] = [
 		{ id: 'dashboard', label: 'Dashboard', icon: 'home' },
 		{ id: 'cleanup', label: 'Smart Cleanup', icon: 'sparkles' },
-		{ id: 'analytics', label: 'System Analytics', icon: 'activity' },
 		{ id: 'treeview', label: 'File Explorer', icon: 'folder' },
 		{ id: 'filesystem-health', label: 'Filesystem Health', icon: 'health' },
 		{ id: 'trash', label: 'Trash', icon: 'trash' },

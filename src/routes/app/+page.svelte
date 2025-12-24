@@ -7,7 +7,6 @@
 	// Previous lazy loading approach caused white screen issues
 	import Dashboard from '$lib/components/Dashboard.svelte';
 	import SmartCleanup from '$lib/components/SmartCleanup.svelte';
-	import SystemAnalytics from '$lib/components/SystemAnalytics.svelte';
 	import EnhancedTreeView from '$lib/components/EnhancedTreeView.svelte';
 	import FilesystemHealth from '$lib/components/FilesystemHealth.svelte';
 	import TrashView from '$lib/components/TrashView.svelte';
@@ -64,9 +63,6 @@
 				<Dashboard />
 			{:else if navigation.view === 'cleanup'}
 				<SmartCleanup />
-			{:else if navigation.view === 'analytics'}
-				{console.log('Rendering SystemAnalytics')}
-				<SystemAnalytics />
 			{:else if navigation.view === 'treeview'}
 				<EnhancedTreeView />
 			{:else if navigation.view === 'filesystem-health'}
