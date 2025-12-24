@@ -1,0 +1,88 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Debug SvelteKit Dev Server",
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["run", "dev"],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Debug Current Test File",
+			"autoAttachChildProcesses": true,
+			"skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+			"program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+			"args": ["run", "${relativeFile}"],
+			"smartStep": true,
+			"console": "integratedTerminal"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Debug All Tests",
+			"autoAttachChildProcesses": true,
+			"skipFiles": ["<node_internals>/**", "**/node_modules/**"],
+			"program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+			"args": ["run"],
+			"smartStep": true,
+			"console": "integratedTerminal"
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug Rust Tests",
+			"cargo": {
+				"args": ["test", "--no-run", "--message-format=json"],
+				"filter": {
+					"name": "pulito",
+					"kind": "test"
+				}
+			},
+			"args": [],
+			"cwd": "${workspaceFolder}/src-tauri",
+			"env": {
+				"RUST_LOG": "debug"
+			}
+		},
+		{
+			"type": "lldb",
+			"request": "launch",
+			"name": "Debug Tauri App",
+			"preLaunchTask": "build-tauri-debug",
+			"program": "${workspaceFolder}/src-tauri/target/debug/pulito",
+			"args": [],
+			"cwd": "${workspaceFolder}/src-tauri",
+			"env": {
+				"RUST_LOG": "debug"
+			},
+			"console": "integratedTerminal"
+		},
+		{
+			"type": "node",
+			"request": "launch",
+			"name": "Debug Tauri Dev",
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["run", "tauri:dev"],
+			"console": "integratedTerminal",
+			"internalConsoleOptions": "neverOpen",
+			"env": {
+				"RUST_LOG": "debug"
+			},
+			"skipFiles": ["<node_internals>/**", "**/node_modules/**"]
+		}
+	],
+	"compounds": [
+		{
+			"name": "Debug Tauri App (Full Stack)",
+			"configurations": ["Debug SvelteKit Dev Server", "Debug Tauri App"],
+			"stopAll": true,
+			"preLaunchTask": "build-tauri-debug"
+		}
+	]
+}

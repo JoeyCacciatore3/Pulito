@@ -1,0 +1,53 @@
+name: pulito
+base: core22
+version: '1.0.0'
+summary: Smart Linux system cleanup and optimization tool
+description: |
+  Pulito helps you safely free up disk space by intelligently identifying
+  and removing unnecessary files, caches, and orphaned packages. Features include
+  smart dependency checking, a secure trash system for recovery, real-time monitoring,
+  and comprehensive system analysis.
+
+grade: stable
+confinement: strict
+
+apps:
+  pulito:
+    command: pulito
+    desktop: usr/share/applications/pulito.desktop
+    plugs:
+      - network
+      - home
+      - x11
+      - wayland
+      - desktop
+      - desktop-legacy
+    environment:
+      RUST_LOG: pulito=info
+
+parts:
+  pulito:
+    plugin: dump
+    source: ../src-tauri/target/release/
+    organize:
+      pulito: bin/pulito
+    stage-packages:
+      - libwebkit2gtk-4.1-0
+      - libgtk-3-0
+      - libayatana-appindicator3-1
+    prime:
+      - bin/pulito
+      - usr/share/applications/pulito.desktop
+      - usr/share/icons/hicolor/*/apps/pulito.*
+
+slots:
+  pulito:
+    interface: desktop
+    desktop: pulito
+
+hooks:
+  configure:
+    plugs:
+      - desktop
+      - x11
+      - wayland

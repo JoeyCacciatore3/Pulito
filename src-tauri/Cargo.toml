@@ -1,0 +1,88 @@
+[package]
+name = "pulito"
+version = "1.0.0"
+description = "Smart Linux system cleanup and optimization"
+authors = ["Pulito Team"]
+license = "MIT"
+repository = "https://github.com/JoeyCacciatore3/pulito"
+edition = "2021"
+rust-version = "1.80.0"
+
+[build-dependencies]
+tauri-build = { version = "2.0", features = [] }
+specta-typescript = "0.0.9"
+
+[dependencies]
+# Tauri core - using stable 2.x releases
+tauri = { version = "2.2", features = ["tray-icon"] }
+tauri-plugin-shell = "2.2"
+tauri-plugin-notification = "2.2"
+tauri-plugin-os = "2.2"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Type generation for TypeScript
+specta = { version = "2.0.0-rc.22", features = ["export", "derive"] }
+specta-typescript = "0.0.9"
+
+# Type generation for TypeScript (temporarily disabled)
+# tauri-specta = { version = "2.0.0-rc.21", features = ["typescript"] }
+# specta-typescript = "0.0.9"
+
+# Database - rusqlite 0.33 with bundled SQLite 3.48
+rusqlite = { version = "0.33", features = ["bundled"] }
+
+# File system watching - notify 6.x for Tauri 2.x compatibility
+notify = { version = "6.1", default-features = false, features = ["macos_fsevent"] }
+walkdir = "2.5"
+dirs = "6.0"
+
+# Background daemon support
+daemonize = "0.5"
+lazy_static = "1.4"
+
+# Async runtime - Latest for December 2025
+tokio = { version = "1.48", features = ["rt-multi-thread", "macros", "fs", "sync", "time"] }
+
+# Utilities
+chrono = { version = "0.4", default-features = false, features = ["clock", "serde"] }
+uuid = { version = "1.11", features = ["v4", "serde"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+thiserror = "2.0"
+anyhow = "1.0"
+libc = "0.2"
+
+# GPU monitoring (optional - for NVIDIA GPUs)
+nvml-wrapper = { version = "0.10", optional = true }
+
+# Battery monitoring removed due to security vulnerability in nix dependency
+# See: https://rustsec.org/advisories/RUSTSEC-2021-0119
+# battery = { version = "0.7", optional = true }
+
+# System info - Latest version for optimal performance
+sysinfo = "0.37"
+
+[dev-dependencies]
+tempfile = "3.0"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+gpu-monitoring = ["nvml-wrapper"]
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+panic = "abort"
+opt-level = "z"
+# December 2025 optimizations
+overflow-checks = false
+debug = false
+rpath = false
+
+[profile.dev]
+opt-level = 0

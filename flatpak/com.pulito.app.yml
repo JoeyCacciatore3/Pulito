@@ -1,0 +1,41 @@
+app-id: com.pulito.app
+runtime: org.freedesktop.Platform
+runtime-version: '23.08'
+sdk: org.freedesktop.Sdk
+sdk-extensions:
+  - org.freedesktop.Sdk.Extension.rust-stable
+command: pulito
+finish-args:
+  - --share=ipc
+  - --socket=x11
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --filesystem=home
+  - --filesystem=xdg-run/dconf
+  - --filesystem=~/.config/dconf:ro
+  - --talk-name=ca.desrt.dconf
+  - --env=DCONF_USER_CONFIG_DIR=.config/dconf
+modules:
+  - name: pulito
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 pulito /app/bin/pulito
+      - install -Dm644 com.pulito.app.desktop /app/share/applications/com.pulito.app.desktop
+      - install -Dm644 com.pulito.app.metainfo.xml /app/share/metainfo/com.pulito.app.metainfo.xml
+      - for size in 16 32 48 64 128 256 512; do
+          install -Dm644 icons/${size}x${size}.png /app/share/icons/hicolor/${size}x${size}/apps/com.pulito.app.png;
+        done
+    sources:
+      - type: file
+        url: file:///app/pulito
+        dest-filename: pulito
+      - type: file
+        url: file:///app/com.pulito.app.desktop
+        dest-filename: com.pulito.app.desktop
+      - type: file
+        url: file:///app/com.pulito.app.metainfo.xml
+        dest-filename: com.pulito.app.metainfo.xml
+      - type: dir
+        url: file:///app/icons
+        dest-filename: icons

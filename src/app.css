@@ -1,0 +1,161 @@
+@import "tailwindcss";
+@config "../tailwind.config.js";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+	:root {
+		--color-bg: #ffffff;
+		--color-bg-secondary: #f8fafc;
+		--color-bg-tertiary: #f1f5f9;
+		--color-text: #0f172a;
+		--color-text-secondary: #475569;
+		--color-text-muted: #94a3b8;
+		--color-border: #e2e8f0;
+		--color-border-focus: #0ea5e9;
+	}
+
+	.dark {
+		--color-bg: #0f172a;
+		--color-bg-secondary: #1e293b;
+		--color-bg-tertiary: #334155;
+		--color-text: #f8fafc;
+		--color-text-secondary: #cbd5e1;
+		--color-text-muted: #64748b;
+		--color-border: #334155;
+		--color-border-focus: #38bdf8;
+	}
+
+	html {
+		font-family: 'Inter', system-ui, sans-serif;
+		font-display: swap;
+	}
+
+	body {
+		@apply bg-[var(--color-bg)] text-[var(--color-text)] antialiased;
+	}
+}
+
+@layer components {
+	.btn {
+		@apply inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+	}
+
+	.btn-primary {
+		@apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+	}
+
+	.btn-secondary {
+		@apply bg-[var(--color-bg-tertiary)] text-[var(--color-text)] hover:bg-[var(--color-border)] focus:ring-primary-500;
+	}
+
+	.btn-danger {
+		@apply bg-critical text-white hover:bg-critical-dark focus:ring-critical;
+	}
+
+	.btn-ghost {
+		@apply bg-transparent hover:bg-[var(--color-bg-secondary)] focus:ring-primary-500;
+	}
+
+	.btn-sm {
+		@apply px-3 py-1.5 text-xs;
+	}
+
+	.btn-lg {
+		@apply px-6 py-3 text-base;
+	}
+
+	.card {
+		@apply bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl shadow-sm;
+	}
+
+	.input {
+		@apply w-full px-3 py-2 text-sm bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors;
+	}
+
+	.badge {
+		@apply inline-flex items-center px-2 py-0.5 text-xs font-medium rounded-full;
+	}
+
+	.badge-safe {
+		@apply bg-safe-light text-safe-dark dark:bg-safe/20 dark:text-safe;
+	}
+
+	.badge-caution {
+		@apply bg-caution-light text-caution-dark dark:bg-caution/20 dark:text-caution;
+	}
+
+	.badge-danger {
+		@apply bg-danger-light text-danger-dark dark:bg-danger/20 dark:text-danger;
+	}
+
+	.badge-critical {
+		@apply bg-critical-light text-critical-dark dark:bg-critical/20 dark:text-critical;
+	}
+
+	.sidebar-item {
+		@apply flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer;
+	}
+
+	.sidebar-item-active {
+		@apply bg-primary-100 text-primary-700 dark:bg-primary-900/30 dark:text-primary-400;
+	}
+
+	.sidebar-item-inactive {
+		@apply text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)] hover:text-[var(--color-text)];
+	}
+
+	.tree-item {
+		@apply flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors;
+	}
+
+	.tree-item:hover {
+		@apply bg-[var(--color-bg-secondary)];
+	}
+
+	.progress-bar {
+		@apply h-2 bg-[var(--color-bg-tertiary)] rounded-full overflow-hidden;
+	}
+
+	.progress-bar-fill {
+		@apply h-full transition-all duration-300 ease-out rounded-full;
+	}
+
+	.spinner {
+		@apply w-5 h-5 border-2 border-[var(--color-border)] border-t-primary-500 rounded-full animate-spin;
+	}
+
+	.tooltip {
+		@apply absolute z-50 px-2 py-1 text-xs text-white bg-gray-900 rounded shadow-lg pointer-events-none opacity-0 transition-opacity;
+	}
+
+	.animate-in {
+		@apply animate-fade-in;
+	}
+}
+
+@layer utilities {
+	.scrollbar-thin {
+		scrollbar-width: thin;
+		scrollbar-color: var(--color-border) transparent;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-thumb {
+		@apply bg-[var(--color-border)] rounded-full;
+	}
+
+	.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+		@apply bg-[var(--color-text-muted)];
+	}
+}

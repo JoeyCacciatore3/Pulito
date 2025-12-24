@@ -1,0 +1,56 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "build-tauri-debug",
+			"type": "shell",
+			"command": "cargo",
+			"args": ["build", "--manifest-path", "src-tauri/Cargo.toml"],
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"problemMatcher": "$rustc",
+			"presentation": {
+				"reveal": "silent",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "test:frontend",
+			"type": "shell",
+			"command": "npm",
+			"args": ["run", "test"],
+			"group": "test",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "test:backend",
+			"type": "shell",
+			"command": "cargo",
+			"args": ["test", "--manifest-path", "src-tauri/Cargo.toml"],
+			"group": "test",
+			"problemMatcher": "$rustc",
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "test:coverage",
+			"type": "shell",
+			"command": "npm",
+			"args": ["run", "test:coverage"],
+			"group": "test",
+			"problemMatcher": [],
+			"presentation": {
+				"reveal": "always",
+				"panel": "shared"
+			}
+		}
+	]
+}
