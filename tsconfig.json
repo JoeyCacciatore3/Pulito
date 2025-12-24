@@ -15,5 +15,6 @@
 		"moduleResolution": "bundler",
 		"target": "ES2024",
 		"module": "ES2022"
-	}
+	},
+	"exclude": ["node_modules", ".svelte-kit", "src/lib/components/charts/**/*"]
 }
