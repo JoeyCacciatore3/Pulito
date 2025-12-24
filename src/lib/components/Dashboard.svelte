@@ -339,15 +339,10 @@
 			<div class="lg:col-span-2 card p-6">
 				<h2 class="font-semibold mb-4">Storage Breakdown</h2>
 				<StorageDonutChart\n					data={[60, 30, 10]}\n					height={200}\n				/>
-				/>
-			</div>
-
-			<!-- System Health Gauge -->
 			<div class="card p-6 flex flex-col items-center justify-center">
 				<h2 class="font-semibold mb-4">System Health</h2>
 				<PerformanceGauge value={healthScore} size={180} />
 			</div>
-		</div>
 
 		<!-- Quick Stats with Sparklines -->
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
