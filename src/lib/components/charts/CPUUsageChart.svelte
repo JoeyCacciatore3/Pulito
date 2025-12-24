@@ -47,44 +47,7 @@
 			return formatTimeForChart(point.timestamp);
 		} else {
 		};
-		return formatDateForChart(point.timestamp);
-	}));
-
-	// Build datasets
-	let datasets = $derived((() => {
-		const colors = getCPUCoreColors(hasCoreData ? coreCount : 1, isDark);
-		const datasets: any[] = [];
-
-		// Overall CPU usage
-		datasets.push({
-			label: 'CPU Usage',
-			data: filteredData.map(d => d.usage),
-			borderColor: colors[0],
-			backgroundColor: transparentize(colors[0], 0.1),
-			fill: true,
-			tension: 0.4,
-			pointRadius: 0,
-			borderWidth: 2,
-			pointHoverRadius: 4
-		});
-
-		// Per-core usage if available
-		if (hasCoreData && coreCount > 0) {
-			for (let i = 0; i < coreCount; i++) {
-				datasets.push({
-					label: `Core ${i + 1}`,
-					data: filteredData.map(d => d.coreUsages![i] || 0),
-					borderColor: colors[i % colors.length],
-					backgroundColor: transparentize(colors[i % colors.length], 0.05),
-					fill: false,
-					tension: 0.4,
-					pointRadius: 0,
-					borderWidth: 1.5,
-					pointHoverRadius: 3
-				});
-
-		return datasets;
-	});
+	// Build datasets\tlet datasets = $derived(() => {\t\tconst colors = getCPUCoreColors(hasCoreData ? coreCount : 1, isDark);\t\tconst datasets: any[] = [];\t\t\t// Main CPU usage dataset\t\tdatasets.push({\t\t\tlabel: 'CPU Usage',\t\t\tdata: filteredData.map(d => d.usage),\t\t\tborderColor: colors[0],\t\t\tbackgroundColor: transparentize(colors[0], 0.1),\t\t\tfill: true,\t\t\ttension: 0.4,\t\t\tpointRadius: 0,\t\t\tborderWidth: 1.5,\t\t\tpointHoverRadius: 3\t\t});\t\t\t// Core usage datasets (if available)\t\tif (hasCoreData) {\t\t\tfilteredData[0].coreUsages!.forEach((_, coreIndex) => {\t\t\t\tdatasets.push({\t\t\t\t\tlabel: `Core ${coreIndex + 1}`,\t\t\t\t\tdata: filteredData.map(d => d.coreUsages![coreIndex]),\t\t\t\t\tborderColor: colors[coreIndex + 1] || colors[0],\t\t\t\t\tbackgroundColor: transparentize(colors[coreIndex + 1] || colors[0], 0.1),\t\t\t\t\tfill: true,\t\t\t\t\ttension: 0.4,\t\t\t\t\tpointRadius: 0,\t\t\t\t\tborderWidth: 1.5,\t\t\t\t\tpointHoverRadius: 3\t\t\t\t});\t\t\t});\t\t}\t\treturn datasets;\t});
 
 	let chartData = $derived(() => {
 		return {
