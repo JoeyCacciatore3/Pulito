@@ -1,12 +1,12 @@
 // Prevents additional console window on Windows in release
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-mod cache;
-mod commands;
-mod db;
-mod packages;
-mod scanner;
-mod trash;
+pub mod cache;
+pub mod commands;
+pub mod db;
+pub mod packages;
+pub mod scanner;
+pub mod trash;
 
 use db::AppState;
 
@@ -55,7 +55,7 @@ fn main() {
     // Generate TypeScript types early in debug mode
     #[cfg(debug_assertions)]
     {
-        use specta::{TypeCollection, Type};
+        use specta::TypeCollection;
         use specta_typescript::Typescript;
 
         let output_dir = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))

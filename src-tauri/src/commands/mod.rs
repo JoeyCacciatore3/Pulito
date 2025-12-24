@@ -10,8 +10,8 @@ use walkdir::WalkDir;
 use tauri::Manager;
 use dirs;
 
-// use crate::packages;
-use crate::db::AppState;
+use crate::packages;
+use crate::db::DbAccess;
 use crate::scanner::{self, ScanOptions, ScanResults, FilesystemHealthResults, StorageRecoveryResults};
 use crate::trash::{self, TrashData, TrashMetadata};
 
@@ -354,17 +354,12 @@ pub async fn get_system_stats(app_handle: tauri::AppHandle) -> Result<SystemStat
     // Get package stats - this is a synchronous operation, but we'll wrap it in a timeout
     // by running it in a blocking task
     let pkg_stats = match timeout(Duration::from_secs(30), tokio::task::spawn_blocking(|| {
-        // packages::get_package_stats()
-        crate::packages::PackageStats {
-            total_packages: 0,
-            orphan_packages: 0,
-            orphan_size: 0,
-        }
+        packages::get_package_stats()
     })).await {
         Ok(Ok(stats)) => stats,
         Ok(Err(_)) | Err(_) => {
             tracing::warn!("Package stats query timed out or failed, using defaults");
-            crate::packages::PackageStats {
+            packages::PackageStats {
                 total_packages: 0,
                 orphan_packages: 0,
                 orphan_size: 0,
@@ -391,7 +386,7 @@ pub async fn get_system_stats(app_handle: tauri::AppHandle) -> Result<SystemStat
     };
 
     // Get last scan results from database
-    let (filesystem_health_savings, storage_recovery_savings) = with_db(&app_handle, |conn| {
+    let (filesystem_health_savings, storage_recovery_savings) = app_handle.db(|conn| {
             let mut fs_stmt = conn.prepare("SELECT total_size FROM last_scan_results WHERE scan_type = 'filesystem_health' ORDER BY timestamp DESC LIMIT 1")?;
             let fs_savings: Option<u64> = fs_stmt.query_row([], |row| {
                 let size: i64 = row.get(0)?;
@@ -417,7 +412,7 @@ pub async fn get_system_stats(app_handle: tauri::AppHandle) -> Result<SystemStat
         cleanable_space += sr_savings;
     }
 
-    let last_scan = with_db(&app_handle, |conn| {
+    let last_scan = app_handle.db(|conn| {
             let mut stmt = conn.prepare("SELECT timestamp FROM scan_history ORDER BY id DESC LIMIT 1")?;
             let timestamp: Result<String, _> = stmt.query_row([], |row| row.get(0));
             Ok(timestamp.ok())
@@ -986,7 +981,7 @@ pub async fn scan_filesystem_health(app_handle: tauri::AppHandle) -> Result<File
             tracing::info!("Filesystem health check complete: {} items, {} bytes", results.total_items, results.total_size);
 
             // Store results in database for Dashboard display
-            let _ = with_db(&app_handle, |conn| {
+            let _ = app_handle.db(|conn| {
                 conn.execute(
                     "INSERT OR REPLACE INTO last_scan_results (scan_type, total_size, total_items, timestamp, scan_data) VALUES (?1, ?2, ?3, ?4, ?5)",
                     (
@@ -1067,7 +1062,7 @@ fn populate_file_access_table(app_handle: &tauri::AppHandle, files: &[scanner::S
 
                     let path_str = path.to_string_lossy().to_string();
 
-                    if let Err(e) = with_db(&app_handle, |conn| {
+                    if let Err(e) = app_handle.db(|conn| {
                         conn.execute(
                             "INSERT OR REPLACE INTO file_access (path, size, last_access) VALUES (?1, ?2, ?3)",
                             (&path_str, size as i64, last_access),
@@ -1098,7 +1093,7 @@ fn populate_file_access_table(app_handle: &tauri::AppHandle, files: &[scanner::S
                 .map(|d: std::time::Duration| d.as_secs() as i64)
                 .unwrap_or(timestamp);
 
-            if let Err(e) = with_db(&app_handle, |conn| {
+            if let Err(e) = app_handle.db(|conn| {
                 conn.execute(
                     "INSERT OR REPLACE INTO file_access (path, size, last_access) VALUES (?1, ?2, ?3)",
                     (&file.path, file.size as i64, last_access),
@@ -1451,7 +1446,7 @@ pub async fn scan_storage_recovery(app_handle: tauri::AppHandle) -> Result<Stora
 
             // Store results in database for Dashboard display
             // Non-critical, so we continue even if it fails
-            if let Err(e) = with_db(&app_handle, |conn| {
+            if let Err(e) = app_handle.db(|conn| {
                 let scan_data = serde_json::to_string(&results)
                     .unwrap_or_else(|_| "{}".to_string());
 
@@ -1679,7 +1674,6 @@ fn validate_filesystem_boundaries(canonical_path: &std::path::Path, _context: &S
 
 /// Permission validation
 fn validate_permissions(canonical_path: &std::path::Path) -> Result<(), SecurityError> {
-    use std::os::unix::fs::PermissionsExt;
 
     match canonical_path.metadata() {
         Ok(metadata) => {
@@ -1894,7 +1888,7 @@ pub async fn get_settings(app_handle: tauri::AppHandle) -> Result<AppSettings, S
     let settings_timeout = Duration::from_secs(5);
 
     match timeout(settings_timeout, async {
-        let settings = with_db(&app_handle, |conn| {
+        let settings = app_handle.db(|conn| {
                 let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = 'app_settings'")?;
                 let json: Result<String, _> = stmt.query_row([], |row| row.get(0));
 
@@ -1923,7 +1917,7 @@ pub async fn save_settings(app_handle: tauri::AppHandle, settings: AppSettings) 
     match timeout(settings_timeout, async {
         let json = serde_json::to_string(&settings).map_err(|e| format!("Failed to serialize: {}", e))?;
 
-        with_db(&app_handle, |conn| {
+        app_handle.db(|conn| {
                 conn.execute(
                     "INSERT OR REPLACE INTO settings (key, value) VALUES ('app_settings', ?1)",
                     [&json],
@@ -2252,7 +2246,7 @@ pub async fn start_diskpulse_monitoring(app_handle: tauri::AppHandle) -> Result<
     state.is_running = true;
 
     // Update monitoring state in database
-    with_db(&app_handle, |conn| {
+    app_handle.db(|conn| {
         conn.execute(
             "INSERT OR REPLACE INTO monitoring_state (key, value, updated_at) VALUES ('diskpulse_running', 'true', ?)",
             [chrono::Utc::now().timestamp()],
@@ -2285,7 +2279,7 @@ pub async fn stop_diskpulse_monitoring(app_handle: tauri::AppHandle) -> Result<(
     state.is_running = false;
 
     // Update monitoring state in database
-    with_db(&app_handle, |conn| {
+    app_handle.db(|conn| {
         conn.execute(
             "INSERT OR REPLACE INTO monitoring_state (key, value, updated_at) VALUES ('diskpulse_running', 'false', ?)",
             [chrono::Utc::now().timestamp()],
@@ -2305,7 +2299,7 @@ async fn record_disk_usage(app_handle: &tauri::AppHandle) -> Result<(), String> 
             let used = disk.total_space() - disk.available_space();
             let timestamp = chrono::Utc::now().timestamp();
 
-            with_db(&app_handle, |conn| {
+            app_handle.db(|conn| {
                 conn.execute(
                     "INSERT INTO disk_history (timestamp, used_bytes, total_bytes, available_bytes) VALUES (?, ?, ?, ?)",
                     [timestamp, used as i64, disk.total_space() as i64, disk.available_space() as i64],
@@ -2379,7 +2373,7 @@ async fn handle_cache_event(app_handle: &tauri::AppHandle, event: notify::Result
                 };
 
                 if let Some(source) = source {
-                    with_db(&app_handle, |conn| {
+                    app_handle.db(|conn| {
                         conn.execute(
                             "INSERT INTO cache_events (path, size_change, event_type, source, timestamp) VALUES (?, ?, 'growth', ?, ?)",
                             [&path_str, &size.to_string(), &source, &timestamp.to_string()],
@@ -2418,7 +2412,7 @@ pub async fn get_diskpulse_health(app_handle: tauri::AppHandle) -> Result<DiskPu
     // Calculate projected days until full using historical data if available
     let projected_days = if stats.total_disk_space > 0 && stats.used_disk_space > 0 {
         // Try to get historical data from disk_history table
-        let historical_data = with_db(&app_handle, |conn| {
+        let historical_data = app_handle.db(|conn| {
             let mut stmt = conn.prepare(
                 "SELECT used_bytes, timestamp FROM disk_history ORDER BY timestamp DESC LIMIT 30"
             )?;
@@ -2483,7 +2477,7 @@ pub async fn get_diskpulse_health(app_handle: tauri::AppHandle) -> Result<DiskPu
 pub async fn get_old_files_summary(app_handle: tauri::AppHandle, days_cutoff: u32) -> Result<OldFilesSummary, String> {
     let cutoff_timestamp = chrono::Utc::now().timestamp() - (days_cutoff as i64 * 24 * 3600);
 
-    let result = with_db(&app_handle, |conn| {
+    let result = app_handle.db(|conn| {
         let mut stmt = conn.prepare(
             "SELECT COUNT(*), SUM(size) FROM file_access WHERE last_access < ?"
         )?;
@@ -2511,7 +2505,7 @@ pub async fn get_old_files_summary(app_handle: tauri::AppHandle, days_cutoff: u3
 
 #[tauri::command]
 pub async fn get_recent_cache_events(app_handle: tauri::AppHandle, limit: usize) -> Result<Vec<CacheEvent>, String> {
-    let events = with_db(&app_handle, |conn| {
+    let events = app_handle.db(|conn| {
         let mut stmt = conn.prepare(
             "SELECT id, path, size_change, event_type, source, timestamp FROM cache_events
              ORDER BY timestamp DESC LIMIT ?"
@@ -2610,7 +2604,7 @@ pub async fn clear_cache_item(item_name: String) -> Result<CleanResult, String> 
 pub async fn cleanup_old_files(app_handle: tauri::AppHandle, days_cutoff: u32) -> Result<CleanResult, String> {
     let cutoff_timestamp = chrono::Utc::now().timestamp() - (days_cutoff as i64 * 24 * 3600);
 
-    let old_files = with_db(&app_handle, |conn| {
+    let old_files = app_handle.db(|conn| {
         let mut stmt = conn.prepare("SELECT path FROM file_access WHERE last_access < ?")?;
         let rows = stmt.query_map([cutoff_timestamp], |row| row.get::<_, String>(0))?;
 
@@ -2694,7 +2688,7 @@ pub async fn get_cache_analytics(app_handle: tauri::AppHandle) -> Result<CacheAn
 }
 
 async fn get_cache_analytics_inner(app_handle: tauri::AppHandle) -> Result<CacheAnalytics, String> {
-    let cache_events = with_db(&app_handle, |conn| {
+    let cache_events = app_handle.db(|conn| {
         let mut stmt = conn.prepare(
             "SELECT source, size_change, timestamp FROM cache_events
              WHERE timestamp > ? ORDER BY timestamp DESC"

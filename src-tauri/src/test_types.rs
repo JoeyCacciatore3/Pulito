@@ -6,6 +6,8 @@ use specta_typescript::Typescript;
 // Include the actual modules
 mod cache;
 mod commands;
+mod db;
+mod packages;
 mod scanner;
 mod trash;
 
