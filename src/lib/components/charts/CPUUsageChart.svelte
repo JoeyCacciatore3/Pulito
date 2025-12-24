@@ -45,7 +45,6 @@
 	let labels = $derived(filteredData.map(point => {
 		if (timeRange === '1h' || timeRange === '6h') {
 			return formatTimeForChart(point.timestamp);
-		});
 		return formatDateForChart(point.timestamp);
 	}));
 
