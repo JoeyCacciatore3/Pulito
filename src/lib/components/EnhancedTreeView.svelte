@@ -46,6 +46,21 @@
 		filterPatterns: []
 	});
 
+	// Helper function to flatten tree into list
+	function getAllNodes(nodes: TreeNode[]): TreeNode[] {
+		const result: TreeNode[] = [];
+
+		function traverse(node: TreeNode) {
+			result.push(node);
+			if (node.children && node.expanded) {
+				node.children.forEach(traverse);
+			}
+		}
+
+		nodes.forEach(traverse);
+		return result;
+	}
+
 	// Statistics for the current view
 	let stats = $state({
 		totalFiles: 0,

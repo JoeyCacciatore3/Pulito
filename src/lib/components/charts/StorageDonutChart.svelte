@@ -75,11 +75,11 @@
 		return {
 			...defaultOptions,
 			plugins: {
-				...(defaultOptions.plugins || {}),
-				legend: {
+				...(defaultOptions.plugins ?? {}),
+			legend: {
 				position: 'right' as const,
 				labels: {
-					...(defaultOptions.plugins?.legend?.labels || {}),
+					...(defaultOptions.plugins?.legend?.labels ?? {}),
 					padding: 15,
 					usePointStyle: true,
 					font: {
@@ -114,7 +114,7 @@
 				}
 			},
 			tooltip: {
-				...(defaultOptions.plugins?.tooltip || {}),
+				...(defaultOptions.plugins?.tooltip ?? {}),
 				callbacks: {
 					label: (context: any) => {
 						const label = context.label || '';
@@ -157,6 +157,7 @@
 
 			return () => observer.disconnect();
 		}
+		return () => {}; // Ensure function always returns
 	});
 </script>
 

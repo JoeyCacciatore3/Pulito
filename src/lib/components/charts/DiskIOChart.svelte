@@ -126,9 +126,9 @@
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
 		plugins: {
-			...getDefaultChartOptions(isDark).plugins,
+			...(getDefaultChartOptions(isDark).plugins ?? {}),
 			tooltip: {
-				...getDefaultChartOptions(isDark).plugins?.tooltip,
+				...(getDefaultChartOptions(isDark).plugins?.tooltip ?? {}),
 				mode: 'index' as const,
 				intersect: false,
 				callbacks: {
@@ -142,19 +142,19 @@
 			}
 		},
 		scales: {
-			...getDefaultChartOptions(isDark).scales,
+			...(getDefaultChartOptions(isDark).scales ?? {}),
 			x: {
-				...getDefaultChartOptions(isDark).scales?.x,
+				...(getDefaultChartOptions(isDark).scales?.x ?? {}),
 				stacked: false
 			},
 			y: {
-				...getDefaultChartOptions(isDark).scales?.y,
+				...(getDefaultChartOptions(isDark).scales?.y ?? {}),
 				type: 'linear' as const,
 				beginAtZero: true,
 				max: maxBytes,
 				position: 'left' as const,
 				ticks: {
-					...getDefaultChartOptions(isDark).scales?.y?.ticks,
+					...(getDefaultChartOptions(isDark).scales?.y?.ticks ?? {}),
 					callback: (value: number) => formatBytesForChart(value)
 				}
 			},

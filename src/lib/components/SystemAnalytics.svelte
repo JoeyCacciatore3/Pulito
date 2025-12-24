@@ -435,7 +435,7 @@
 							</span>
 						</div>
 
-						<ProgressBar progress={metrics.gpu_info.usage} class="h-2 mt-3" />
+						<ProgressBar percentage={metrics.gpu_info.usage} class="h-2 mt-3" />
 					</div>
 				</div>
 			{/if}

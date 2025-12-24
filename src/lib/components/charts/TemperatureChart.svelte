@@ -136,9 +136,9 @@
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
 		plugins: {
-			...getDefaultChartOptions(isDark).plugins,
+			...(getDefaultChartOptions(isDark).plugins ?? {}),
 			tooltip: {
-				...getDefaultChartOptions(isDark).plugins?.tooltip,
+				...(getDefaultChartOptions(isDark).plugins?.tooltip ?? {}),
 				mode: 'index' as const,
 				intersect: false,
 				callbacks: {
@@ -151,12 +151,12 @@
 			// For now, thresholds are shown via tooltip and color coding
 		},
 		scales: {
-			...getDefaultChartOptions(isDark).scales,
+			...(getDefaultChartOptions(isDark).scales ?? {}),
 			y: {
-				...getDefaultChartOptions(isDark).scales?.y,
+				...(getDefaultChartOptions(isDark).scales?.y ?? {}),
 				beginAtZero: false,
 				ticks: {
-					...getDefaultChartOptions(isDark).scales?.y?.ticks,
+					...(getDefaultChartOptions(isDark).scales?.y?.ticks ?? {}),
 					callback: (value: number) => `${value}°C`
 				}
 			}

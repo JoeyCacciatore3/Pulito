@@ -569,7 +569,7 @@
 				<LoadingSpinner size="sm" />
 				<span class="font-medium">{currentOperation}</span>
 			</div>
-			<ProgressBar {progress} class="h-2" />
+			<ProgressBar percentage={progress} class="h-2" />
 		</div>
 	{/if}
 

@@ -14,7 +14,7 @@
 		try {
 			const savedSettings = await invoke<AppSettings>('get_settings');
 			settings.load(savedSettings);
-			theme.set(savedSettings.theme);
+			theme.set(savedSettings.theme as 'light' | 'dark' | 'system');
 		} catch (e) {
 			logger.error('Failed to load settings', { component: 'Settings', action: 'load_settings', operation: 'get_settings' }, e);
 			// Continue with defaults if loading fails
@@ -51,7 +51,7 @@
 
 	function handleThemeChange(newTheme: AppSettings['theme']) {
 		settings.update({ theme: newTheme });
-		theme.set(newTheme);
+		theme.set(newTheme as 'light' | 'dark' | 'system');
 	}
 </script>
 

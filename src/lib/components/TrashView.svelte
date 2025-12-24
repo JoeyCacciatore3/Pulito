@@ -66,7 +66,7 @@
 	async function emptyTrash() {
 		const confirmed = await confirmation.show({
 			title: 'Empty Trash',
-			message: `Permanently delete all ${trashData?.total_count || 0} items in trash? This action cannot be undone.`,
+			message: `Permanently delete all ${trashData?.total_items || 0} items in trash? This action cannot be undone.`,
 			confirmText: 'Empty Trash',
 			cancelText: 'Cancel',
 			type: 'danger'
@@ -107,7 +107,7 @@
 			</p>
 		</div>
 
-		{#if trashData && trashData.total_count > 0}
+		{#if trashData && trashData.total_items > 0}
 			<button class="btn btn-danger" onclick={emptyTrash}>
 				<svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -121,7 +121,7 @@
 		<div class="flex items-center justify-center h-64">
 			<div class="spinner"></div>
 		</div>
-	{:else if !trashData || trashData.total_count === 0}
+		{:else if !trashData || trashData.total_items === 0}
 		<div class="card p-12 text-center">
 			<svg class="w-16 h-16 mx-auto mb-4 text-[var(--color-text-muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
 				<path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -136,7 +136,7 @@
 		<div class="card p-4 flex items-center justify-between">
 			<div>
 				<span class="text-[var(--color-text-secondary)]">Total items:</span>
-				<span class="font-semibold ml-2">{trashData.total_count}</span>
+				<span class="font-semibold ml-2">{trashData.total_items}</span>
 			</div>
 			<div>
 				<span class="text-[var(--color-text-secondary)]">Total size:</span>
