@@ -109,6 +109,7 @@
 
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
+		return {
 		const defaultOptions = getDefaultChartOptions(isDark);
 		plugins: {
 			...(defaultOptions.plugins ?? {}),
@@ -152,6 +153,7 @@
 	});
 
 	// Watch for theme changes
+		};
 	onMount(() => {
 		const observer = new MutationObserver(() => {
 			isDark = document.documentElement.classList.contains('dark');
