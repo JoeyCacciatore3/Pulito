@@ -7,13 +7,19 @@ import { invoke as tauriInvoke } from '@tauri-apps/api/core';
  * Implements December 2025 standards for reliable IPC communication
  */
 
-interface IPCRequest {
+/**
+ * Type for IPC invoke arguments
+ * Matches Tauri's InvokeArgs type: Record<string, unknown> | number[] | ArrayBuffer | Uint8Array
+ */
+type InvokeArgs = Record<string, unknown> | number[] | ArrayBuffer | Uint8Array;
+
+interface IPCRequest<T = unknown> {
 	id: string;
 	cmd: string;
-	args: any;
+	args: InvokeArgs;
 	options: IPCOptions;
-	resolve: (_value: any) => void;
-	reject: (_error: any) => void;
+	resolve: (_value: T) => void;
+	reject: (_error: unknown) => void;
 	timestamp: number;
 	attempts: number;
 }
@@ -41,7 +47,7 @@ class IPCManager {
 	/**
 	 * Enhanced invoke method with queuing, batching, and retry logic
 	 */
-	async invoke<T = any>(cmd: string, args: any = {}, options: IPCOptions = {}): Promise<T> {
+	async invoke<T = unknown>(cmd: string, args: InvokeArgs = {}, options: IPCOptions = {}): Promise<T> {
 		const requestId = `${cmd}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 		return new Promise<T>((resolve, reject) => {
@@ -109,13 +115,13 @@ class IPCManager {
 	/**
 	 * Execute a single request with retry logic
 	 */
-	private async executeRequest(request: IPCRequest): Promise<void> {
+	private async executeRequest<T>(request: IPCRequest<T>): Promise<void> {
 		const { cmd, args, options, resolve, reject } = request;
 		const timeout = options.timeout ?? 30000; // 30 second default
 
 		try {
 			// Execute with timeout
-			const result = await this.executeWithTimeout(cmd, args, timeout);
+			const result = await this.executeWithTimeout<T>(cmd, args, timeout);
 
 			// Reset retry count on success
 			this.retryAttempts.delete(request.id);
@@ -129,7 +135,7 @@ class IPCManager {
 	/**
 	 * Execute IPC call with timeout
 	 */
-	private async executeWithTimeout(cmd: string, args: any, timeout: number): Promise<any> {
+	private async executeWithTimeout<T = unknown>(cmd: string, args: InvokeArgs, timeout: number): Promise<T> {
 		return new Promise((resolve, reject) => {
 			const timeoutId = setTimeout(() => {
 				reject(new Error(`IPC call '${cmd}' timed out after ${timeout}ms`));
@@ -150,7 +156,7 @@ class IPCManager {
 	/**
 	 * Handle request errors with retry logic
 	 */
-	private async handleRequestError(request: IPCRequest, error: any, reject: (_error: any) => void) {
+	private async handleRequestError<T>(request: IPCRequest<T>, error: unknown, reject: (_error: unknown) => void) {
 		request.attempts++;
 		const shouldRetry = request.options.retry !== false &&
 						   request.attempts < this.maxRetries &&
@@ -175,7 +181,7 @@ class IPCManager {
 				args: request.args,
 				attempts: request.attempts,
 				timestamp: new Date().toISOString(),
-				message: error.message ?? 'Unknown IPC error'
+				message: error instanceof Error ? error.message : 'Unknown IPC error'
 			};
 
 			reject(enhancedError);
@@ -185,8 +191,8 @@ class IPCManager {
 	/**
 	 * Determine if an error is retryable
 	 */
-	private isRetryableError(error: any): boolean {
-		const message = error.message ?? error.toString();
+	private isRetryableError(error: unknown): boolean {
+		const message = error instanceof Error ? error.message : String(error);
 
 		// Retry on network-like errors, timeouts, but not on permission errors
 		const retryablePatterns = [
@@ -307,15 +313,15 @@ export function isTauri(): boolean {
 	return false;
 }
 
-/**
- * Enhanced invoke wrapper using IPCManager with queuing, batching, and retry mechanisms
- * Maintains backward compatibility with existing code
- */
-export async function invoke<T = any>(
-	cmd: string,
-	args: any = {},
-	timeoutOrOptions?: number | IPCOptions
-): Promise<T> {
+	/**
+	 * Enhanced invoke wrapper using IPCManager with queuing, batching, and retry mechanisms
+	 * Maintains backward compatibility with existing code
+	 */
+	export async function invoke<T = unknown>(
+		cmd: string,
+		args: InvokeArgs = {},
+		timeoutOrOptions?: number | IPCOptions
+	): Promise<T> {
 	// Validate input parameters
 	if (!cmd || typeof cmd !== 'string') {
 		throw new Error(`Invalid command: ${cmd}`);

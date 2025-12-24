@@ -4,21 +4,11 @@
 	import NetworkTrafficChart from './charts/NetworkTrafficChart.svelte';
 	import DiskIOChart from './charts/DiskIOChart.svelte';
 	import TemperatureChart from './charts/TemperatureChart.svelte';
-	import LoadingSpinner from './ui/LoadingSpinner.svelte';
 	import ProgressBar from './ui/ProgressBar.svelte';
+	import { formatBytes } from '$lib/utils/tauri';
+	import type { SystemHealthData } from '$lib/generated/types';
 
-	let metrics = $state(null);
-
-	function formatBytes(bytes: number): string {
-		const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-		let size = bytes;
-		let unitIndex = 0;
-		while (size >= 1024 && unitIndex < units.length - 1) {
-			size /= 1024;
-			unitIndex++;
-		}
-		return `${size.toFixed(1)} ${units[unitIndex]}`;
-	}
+	let metrics = $state<SystemHealthData | null>(null);
 
 	function getHealthScore(): { score: number; status: string; color: string } {
 		return { score: 85, status: 'Good', color: 'green' };
@@ -72,15 +62,6 @@
 				</div>
 			</div>
 		</div>
-
-		<!-- Real-time Indicator -->
-		{#if realTimeMode}
-			<div class="flex items-center gap-2 text-sm text-green-600 bg-green-50 px-3 py-2 rounded-lg border border-green-200">
-				<div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-				<span class="font-medium">Live monitoring active</span>
-				<span class="text-muted">• Updates every 2 seconds</span>
-			</div>
-		{/if}
 
 		<!-- Charts Grid -->
 		<div class="space-y-6">

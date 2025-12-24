@@ -44,7 +44,7 @@ class MonitoringService {
 	private alerts: SystemAlert[] = [];
 	private checkInterval: ReturnType<typeof setInterval> | null = null;
 	private isMonitoring = false;
-	private lastHealthCheck: any = null;
+	private lastHealthCheck: SystemHealthData | null = null;
 
 	constructor() {
 		this.config = {
@@ -126,7 +126,7 @@ class MonitoringService {
 		}
 	}
 
-	private checkSystemHealth(healthData: any) {
+	private checkSystemHealth(healthData: SystemHealthData) {
 		const { cpu_usage, total_memory, used_memory, temperatures } = healthData;
 
 		// CPU usage alert

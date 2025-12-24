@@ -5,6 +5,37 @@
 
 import { logger } from './logger';
 
+/**
+ * Performance Memory API interface (non-standard, Chrome-specific)
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/Performance/memory
+ */
+interface PerformanceMemory {
+	usedJSHeapSize: number;
+	totalJSHeapSize: number;
+	jsHeapSizeLimit: number;
+}
+
+/**
+ * Extended Performance interface with memory property
+ */
+interface PerformanceWithMemory extends Performance {
+	memory?: PerformanceMemory;
+}
+
+/**
+ * Type guard for PerformanceEventTiming (First Input Delay)
+ */
+function isPerformanceEventTiming(entry: PerformanceEntry): entry is PerformanceEventTiming {
+	return entry.entryType === 'first-input' && 'processingStart' in entry;
+}
+
+/**
+ * Type guard for LayoutShift (Cumulative Layout Shift)
+ */
+function isLayoutShift(entry: PerformanceEntry): entry is LayoutShift {
+	return entry.entryType === 'layout-shift' && 'value' in entry && 'hadRecentInput' in entry;
+}
+
 interface PerformanceMetrics {
 	timestamp: number;
 	renderTime: number;
@@ -86,10 +117,12 @@ class PerformanceMonitor {
 			try {
 				const fidObserver = new PerformanceObserver((list) => {
 					const entries = list.getEntries();
-					entries.forEach((entry: any) => {
-						this.recordMetric({
-							firstInputDelay: entry.processingStart - entry.startTime
-						});
+					entries.forEach((entry) => {
+						if (isPerformanceEventTiming(entry)) {
+							this.recordMetric({
+								firstInputDelay: entry.processingStart - entry.startTime
+							});
+						}
 					});
 				});
 				fidObserver.observe({ entryTypes: ['first-input'] });
@@ -103,8 +136,8 @@ class PerformanceMonitor {
 				const clsObserver = new PerformanceObserver((list) => {
 					let clsValue = 0;
 					const entries = list.getEntries();
-					entries.forEach((entry: any) => {
-						if (!entry.hadRecentInput) {
+					entries.forEach((entry) => {
+						if (isLayoutShift(entry) && !entry.hadRecentInput) {
 							clsValue += entry.value;
 						}
 					});
@@ -130,10 +163,10 @@ class PerformanceMonitor {
 
 		// Monitor memory usage every 30 seconds
 		setInterval(() => {
-			if ('memory' in performance) {
-				const memory = (performance as any).memory;
+			const perfWithMemory = performance as PerformanceWithMemory;
+			if (perfWithMemory.memory) {
 				this.recordMetric({
-					memoryUsage: memory.usedJSHeapSize
+					memoryUsage: perfWithMemory.memory.usedJSHeapSize
 				});
 			}
 		}, 30000);
@@ -253,12 +286,12 @@ class PerformanceMonitor {
 
 	// Memory usage helpers
 	getMemoryUsage(): { used: number; total: number; limit: number } | null {
-		if ('memory' in performance) {
-			const memory = (performance as any).memory;
+		const perfWithMemory = performance as PerformanceWithMemory;
+		if (perfWithMemory.memory) {
 			return {
-				used: memory.usedJSHeapSize,
-				total: memory.totalJSHeapSize,
-				limit: memory.jsHeapSizeLimit
+				used: perfWithMemory.memory.usedJSHeapSize,
+				total: perfWithMemory.memory.totalJSHeapSize,
+				limit: perfWithMemory.memory.jsHeapSizeLimit
 			};
 		}
 		return null;
