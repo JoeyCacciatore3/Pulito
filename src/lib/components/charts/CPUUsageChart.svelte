@@ -84,7 +84,7 @@
 				});
 
 		return datasets;
-	})());
+	});
 
 	let chartData = $derived({
 		labels,
