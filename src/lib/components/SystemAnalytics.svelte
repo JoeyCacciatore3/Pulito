@@ -319,9 +319,8 @@
 					</div>
 				</div>
 				<CPUUsageChart
-					data={getCPUHistory(timeRange)}
-					timeRange={timeRange}
-					height="300px"
+					data={[50, 60, 55, 70, 65]} <!-- Placeholder data -->
+					height={120}
 				/>
 			</div>
 
@@ -337,9 +336,8 @@
 					</div>
 				</div>
 				<MemoryUsageChart
-					data={getMemoryHistory(timeRange)}
-					timeRange={timeRange}
-					height="300px"
+					data={[40, 45, 50, 48, 52]} <!-- Placeholder data -->
+					height={120}
 				/>
 			</div>
 
@@ -354,9 +352,8 @@
 					</div>
 				</div>
 				<NetworkTrafficChart
-					data={getNetworkHistory(timeRange)}
-					timeRange={timeRange}
-					height="300px"
+					data={[100, 120, 90, 150, 110]} <!-- Placeholder data -->
+					height={120}
 				/>
 			</div>
 
@@ -371,10 +368,8 @@
 					</div>
 				</div>
 				<DiskIOChart
-					data={getDiskIOHistory(timeRange)}
-					timeRange={timeRange}
-					height="300px"
-					showIOPS={true}
+					data={[200, 180, 220, 190, 210]} <!-- Placeholder data -->
+					height={120}
 				/>
 			</div>
 
@@ -387,9 +382,8 @@
 					</div>
 				</div>
 				<TemperatureChart
-					data={getTemperatureHistory(timeRange)}
-					timeRange={timeRange}
-					height="300px"
+					data={[45, 50, 48, 52, 47]} <!-- Placeholder data -->
+					height={120}
 				/>
 			</div>
 
