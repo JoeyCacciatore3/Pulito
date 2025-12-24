@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Pulito** is a sophisticated Linux system cleanup and optimization tool built with Tauri 2.x (Rust backend) and Svelte 5 (frontend). It provides intelligent, AI-powered system maintenance with comprehensive monitoring, analysis, and cleanup capabilities.
+**Pulito** is a sophisticated Linux system cleanup and optimization tool built with Tauri 2.x (Rust backend) and Svelte 5 (frontend). It provides intelligent, smart algorithm-powered system maintenance with comprehensive monitoring, analysis, and cleanup capabilities.
 
 ## 🏗️ Architecture Overview
 
@@ -62,25 +62,25 @@ Real-time system status monitoring and cleanup entry point with health scoring a
 
 ---
 
-## 2. Smart Cleanup - AI-Powered Optimization
+## 2. Smart Cleanup - Smart Algorithm Optimization
 
 ### Purpose
-Intelligent multi-category system cleanup with AI-driven risk assessment and personalized recommendations.
+Intelligent multi-category system cleanup with smart algorithm-driven risk assessment and personalized recommendations.
 
 ### Components
-- `SmartCleanup.svelte` - Main AI analysis interface
+- `SmartCleanup.svelte` - Main smart algorithm analysis interface
 - 5 cleanup categories: Cache, Packages, Filesystem, Storage, Logs
-- AI confidence scoring (0-100%) with detailed insights
+- Smart algorithm confidence scoring (0-100%) with detailed insights
 - Impact visualization and dependency warnings
 
 ### User Workflow
 
-#### Phase 1: AI Analysis
+#### Phase 1: Smart Algorithm Analysis
 ```
-🤖 AI Analysis: Scanning system for optimization opportunities...
-├── 🧠 AI: Analyzing usage patterns and behavior
+🔍 Smart Algorithm Analysis: Scanning system for optimization opportunities...
+├── 🧠 Algorithm: Analyzing usage patterns and behavior
 ├── 📊 Predicting future storage needs and growth
-├── 🔍 Deep filesystem analysis with ML clustering
+├── 🔍 Deep filesystem analysis with pattern recognition
 ├── ⚡ Calculating risk-adjusted cleanup strategies
 ├── 🎯 Generating personalized recommendations
 └── 📈 Forecasting long-term optimization benefits
@@ -99,7 +99,7 @@ Intelligent multi-category system cleanup with AI-driven risk assessment and per
 
 ### Technical Implementation
 
-#### AI Simulation Algorithms
+#### Smart Algorithms
 ```rust
 // Cache growth prediction
 fn predict_cache_growth(stats: &SystemStats) -> f64 {
@@ -141,7 +141,7 @@ fn analyze_package_dependencies(stats: &SystemStats) -> PackageAnalysis {
 ### Configuration Options
 - **Scan Depth**: Include caches, packages, logs, hidden files
 - **Large File Threshold**: 50MB - 1GB detection limits
-- **AI Confidence Minimum**: 70% for automatic recommendations
+- **Algorithm Confidence Minimum**: 70% for automatic recommendations
 - **Batch Size**: Sequential processing limits
 
 ---
@@ -149,7 +149,7 @@ fn analyze_package_dependencies(stats: &SystemStats) -> PackageAnalysis {
 ## 3. Enhanced File Explorer
 
 ### Purpose
-Advanced file browsing with AI insights, multiple visualization modes, and intelligent analysis.
+Advanced file browsing with smart algorithm insights, multiple visualization modes, and intelligent analysis.
 
 ### Components
 - `EnhancedTreeView.svelte` - Multi-mode file browser
@@ -164,7 +164,7 @@ Advanced file browsing with AI insights, multiple visualization modes, and intel
 2. **List View**: Flat file listing with sorting options
 3. **Treemap View**: Space visualization (planned feature)
 
-#### AI Enhancement Features
+#### Smart Algorithm Enhancement Features
 - **Access Pattern Analysis**:
   - Frequent: Accessed within 7 days
   - Occasional: Accessed within 3 months
@@ -189,9 +189,9 @@ interface TreeViewOptions {
 }
 ```
 
-#### AI Insight Generation
+#### Smart Algorithm Insight Generation
 ```typescript
-function enhanceWithAIInsights(nodes: TreeNode[]): TreeNode[] {
+function enhanceWithSmartAlgorithmInsights(nodes: TreeNode[]): TreeNode[] {
     return nodes.map(node => {
         const daysSinceAccess = (Date.now() - node.lastAccessed) / (1000 * 60 * 60 * 24);
 
@@ -212,7 +212,7 @@ function enhanceWithAIInsights(nodes: TreeNode[]): TreeNode[] {
             usagePattern = 'frequent';
         }
 
-        return { ...node, aiInsight: insight, usagePattern };
+        return { ...node, algorithmInsight: insight, usagePattern };
     });
 }
 ```
@@ -880,7 +880,7 @@ const SETTINGS_VALIDATION = {
 - **Treemap Visualization**: Space usage visualization
 - **Automated Scheduling**: Cron-based cleanup jobs
 - **Cloud Backup Integration**: Remote backup before cleanup
-- **Machine Learning**: Improved AI predictions
+- **Machine Learning**: Enhanced smart algorithm predictions with ML models
 - **Multi-language Support**: Internationalization
 - **Plugin System**: Extensible cleanup modules
 
