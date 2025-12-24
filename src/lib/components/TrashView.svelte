@@ -3,7 +3,7 @@
 	import { invoke, formatBytes, formatRelativeTime, handleTauriError } from '$lib/utils/tauri';
 	import { confirmation } from '$lib/stores/confirmation.svelte';
 	import { notificationStore } from '$lib/stores/notifications.svelte';
-	import type { TrashItem, TrashData } from '$lib/generated/types';
+	import type { TrashData } from '$lib/generated/types';
 
 	let trashData = $state<TrashData | null>(null);
 	let loading = $state(true);

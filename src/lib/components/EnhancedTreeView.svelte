@@ -206,10 +206,11 @@
 				case 'date':
 					comparison = a.lastModified - b.lastModified;
 					break;
-				case 'risk':
+				case 'risk': {
 					const riskOrder = { safe: 0, caution: 1, warning: 2 };
 					comparison = riskOrder[a.riskLevel] - riskOrder[b.riskLevel];
 					break;
+				}
 			}
 
 			return sortOrder === 'asc' ? comparison : -comparison;

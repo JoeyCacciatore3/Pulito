@@ -128,18 +128,81 @@ export function addDiskIOData(data: Omit<DiskIODataPoint, 'timestamp'>) {
 /**
  * Prune old data points based on retention and max points
  */
-function pruneData(metric: keyof MetricsHistory) {
+function pruneCPUData() {
 	const now = Date.now();
-	const data = history[metric];
+	const data = history.cpu;
 
 	// Remove data older than retention period
 	const filtered = data.filter(point => (now - point.timestamp) <= RETENTION_MS);
 
 	// If still too many points, keep only the most recent MAX_POINTS
-	if (filtered.length > MAX_POINTS) {
-		history[metric] = filtered.slice(-MAX_POINTS);
-	} else {
-		history[metric] = filtered;
+	history.cpu = filtered.length > MAX_POINTS ? filtered.slice(-MAX_POINTS) : filtered;
+}
+
+function pruneMemoryData() {
+	const now = Date.now();
+	const data = history.memory;
+
+	// Remove data older than retention period
+	const filtered = data.filter(point => (now - point.timestamp) <= RETENTION_MS);
+
+	// If still too many points, keep only the most recent MAX_POINTS
+	history.memory = filtered.length > MAX_POINTS ? filtered.slice(-MAX_POINTS) : filtered;
+}
+
+function pruneNetworkData() {
+	const now = Date.now();
+	const data = history.network;
+
+	// Remove data older than retention period
+	const filtered = data.filter(point => (now - point.timestamp) <= RETENTION_MS);
+
+	// If still too many points, keep only the most recent MAX_POINTS
+	history.network = filtered.length > MAX_POINTS ? filtered.slice(-MAX_POINTS) : filtered;
+}
+
+function pruneTemperatureData() {
+	const now = Date.now();
+	const data = history.temperature;
+
+	// Remove data older than retention period
+	const filtered = data.filter(point => (now - point.timestamp) <= RETENTION_MS);
+
+	// If still too many points, keep only the most recent MAX_POINTS
+	history.temperature = filtered.length > MAX_POINTS ? filtered.slice(-MAX_POINTS) : filtered;
+}
+
+function pruneDiskIOData() {
+	const now = Date.now();
+	const data = history.diskIO;
+
+	// Remove data older than retention period
+	const filtered = data.filter(point => (now - point.timestamp) <= RETENTION_MS);
+
+	// If still too many points, keep only the most recent MAX_POINTS
+	history.diskIO = filtered.length > MAX_POINTS ? filtered.slice(-MAX_POINTS) : filtered;
+}
+
+/**
+ * Prune old data points based on retention and max points
+ */
+function pruneData(metric: keyof MetricsHistory) {
+	switch (metric) {
+		case 'cpu':
+			pruneCPUData();
+			break;
+		case 'memory':
+			pruneMemoryData();
+			break;
+		case 'network':
+			pruneNetworkData();
+			break;
+		case 'temperature':
+			pruneTemperatureData();
+			break;
+		case 'diskIO':
+			pruneDiskIOData();
+			break;
 	}
 }
 
@@ -226,35 +289,36 @@ export function getLatestData() {
 
 /**
  * Reactive getter for CPU history
+ * Note: Callers should use $derived(getCPUHistoryReactive(range)) in components
  */
 export function getCPUHistoryReactive(range: '1h' | '6h' | '24h' | 'all' = 'all') {
-	return $derived(getCPUHistory(range));
+	return getCPUHistory(range);
 }
 
 /**
  * Reactive getter for Memory history
  */
 export function getMemoryHistoryReactive(range: '1h' | '6h' | '24h' | 'all' = 'all') {
-	return $derived(getMemoryHistory(range));
+	return getMemoryHistory(range);
 }
 
 /**
  * Reactive getter for Network history
  */
 export function getNetworkHistoryReactive(range: '1h' | '6h' | '24h' | 'all' = 'all') {
-	return $derived(getNetworkHistory(range));
+	return getNetworkHistory(range);
 }
 
 /**
  * Reactive getter for Temperature history
  */
 export function getTemperatureHistoryReactive(range: '1h' | '6h' | '24h' | 'all' = 'all') {
-	return $derived(getTemperatureHistory(range));
+	return getTemperatureHistory(range);
 }
 
 /**
  * Reactive getter for Disk I/O history
  */
 export function getDiskIOHistoryReactive(range: '1h' | '6h' | '24h' | 'all' = 'all') {
-	return $derived(getDiskIOHistory(range));
+	return getDiskIOHistory(range);
 }

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 
-	console.log('SystemAnalytics component loaded');
 	import { invoke, formatBytes } from '$lib/utils/tauri';
 	import { notificationStore } from '$lib/stores/notifications.svelte';
 	import { logger } from '$lib/utils/logger';
@@ -94,11 +93,8 @@
 
 	async function loadSystemMetrics() {
 		try {
-			console.log('SystemAnalytics: Calling get_system_health...');
 			const data = await invoke<SystemMetrics>('get_system_health', undefined, 10000);
-			console.log('SystemAnalytics: Received data:', data);
 			metrics = data;
-			console.log('SystemAnalytics: Data set successfully');
 
 			// Store metrics in history
 			if (data) {
@@ -135,43 +131,8 @@
 		} catch (e) {
 			console.error('SystemAnalytics: Error loading metrics:', e);
 			logger.error('Failed to load system metrics', { component: 'SystemAnalytics' }, e);
-
-			// Fallback: create dummy data to test if component renders
-			console.log('SystemAnalytics: Using fallback dummy data');
-			metrics = {
-				cpu_usage: 45.2,
-				cpu_cores: 8,
-				cpu_frequency: 3200.0,
-				core_usages: [40.0, 42.0, 38.0, 46.0, 35.0, 41.0, 39.0, 44.0],
-				total_memory: 16 * 1024 * 1024 * 1024, // 16GB
-				used_memory: 8 * 1024 * 1024 * 1024,   // 8GB
-				available_memory: 8 * 1024 * 1024 * 1024, // 8GB
-				swap_total: 2 * 1024 * 1024 * 1024,    // 2GB
-				swap_used: 512 * 1024 * 1024,          // 512MB
-				network_up: 1024 * 1024 * 1024,        // 1GB
-				network_down: 2 * 1024 * 1024 * 1024,  // 2GB
-				active_connections: [],
-				disk_read_bytes: 10 * 1024 * 1024 * 1024, // 10GB
-				disk_write_bytes: 5 * 1024 * 1024 * 1024,  // 5GB
-				disk_read_ops: 150000,
-				disk_write_ops: 75000,
-				temperatures: {
-					cpu: 65.0,
-					system: 55.0,
-					gpu: 70.0
-				},
-				top_processes: [
-					{ name: 'chrome', pid: 1234, cpu_usage: 15.2, memory_usage: 800 * 1024 * 1024 },
-					{ name: 'firefox', pid: 5678, cpu_usage: 8.7, memory_usage: 600 * 1024 * 1024 }
-				],
-				load_average: {
-					one_minute: 1.25,
-					five_minutes: 1.15,
-					fifteen_minutes: 1.05
-				}
-			};
-
-			notificationStore.warning('Using Test Data', 'Backend data unavailable, showing test metrics');
+			notificationStore.error('Failed to Load Metrics', 'Could not retrieve system metrics. Please check system permissions and try again.');
+			metrics = null;
 		} finally {
 			loading = false;
 		}
@@ -242,44 +203,7 @@
 	}
 
 	onMount(() => {
-		console.log('SystemAnalytics onMount called');
-		// Temporarily skip backend call to test component rendering
-		console.log('SystemAnalytics: Using immediate dummy data for testing');
-		metrics = {
-			cpu_usage: 45.2,
-			cpu_cores: 8,
-			cpu_frequency: 3200.0,
-			core_usages: [40.0, 42.0, 38.0, 46.0, 35.0, 41.0, 39.0, 44.0],
-			total_memory: 16 * 1024 * 1024 * 1024, // 16GB
-			used_memory: 8 * 1024 * 1024 * 1024,   // 8GB
-			available_memory: 8 * 1024 * 1024 * 1024, // 8GB
-			swap_total: 2 * 1024 * 1024 * 1024,    // 2GB
-			swap_used: 512 * 1024 * 1024,          // 512MB
-			network_up: 1024 * 1024 * 1024,        // 1GB
-			network_down: 2 * 1024 * 1024 * 1024,  // 2GB
-			active_connections: [],
-			disk_read_bytes: 10 * 1024 * 1024 * 1024, // 10GB
-			disk_write_bytes: 5 * 1024 * 1024 * 1024,  // 5GB
-			disk_read_ops: 150000,
-			disk_write_ops: 75000,
-			temperatures: {
-				cpu: 65.0,
-				system: 55.0,
-				gpu: 70.0
-			},
-			top_processes: [
-				{ name: 'chrome', pid: 1234, cpu_usage: 15.2, memory_usage: 800 * 1024 * 1024 },
-				{ name: 'firefox', pid: 5678, cpu_usage: 8.7, memory_usage: 600 * 1024 * 1024 }
-			],
-			load_average: {
-				one_minute: 1.25,
-				five_minutes: 1.15,
-				fifteen_minutes: 1.05
-			}
-		};
-		loading = false;
-		console.log('SystemAnalytics: Dummy data set, component should render now');
-		// loadSystemMetrics(); // Commented out for testing
+		loadSystemMetrics();
 	});
 
 	// Cleanup on unmount

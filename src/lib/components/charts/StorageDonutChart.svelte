@@ -1,20 +1,20 @@
 <script lang="ts">
-	import { onMount } from 'svelte';)
-	import { Doughnut } from 'svelte5-chartjs';)
-	import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';)
-	import { getDefaultChartOptions, getStorageColors, formatBytesForChart, transparentize, theme } from '$lib/utils/charts';)
-	import { formatBytes } from '$lib/utils/tauri';)
+	import { onMount } from 'svelte';
+	import { Doughnut } from 'svelte5-chartjs';
+	import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
+	import { getDefaultChartOptions, getStorageColors, formatBytesForChart, transparentize, theme } from '$lib/utils/charts';
+	import { formatBytes } from '$lib/utils/tauri';
 
 	// Register Chart.js components
 	Chart.register(ArcElement, Tooltip, Legend);
 
 	interface Props {
-		totalDiskSpace: number;)
-		usedDiskSpace: number;)
-		cacheSize: number;)
-		orphanPackagesSize?: number;)
-		cleanableSpace: number;)
-		onSegmentClick?: (segment: string) => void;)
+		totalDiskSpace: number;
+		usedDiskSpace: number;
+		cacheSize: number;
+		orphanPackagesSize?: number;
+		cleanableSpace: number;
+		onSegmentClick?: (segment: string) => void;
 	}
 
 	let {
@@ -53,7 +53,7 @@
 						colors.logs,
 						colors.userFiles,
 						colors.free
-					];)
+					];
 				})(),
 				borderColor: (() => {
 					const colors = getStorageColors(isDark);
@@ -63,7 +63,7 @@
 						transparentize(colors.logs, 1),
 						transparentize(colors.userFiles, 1),
 						transparentize(colors.free, 1)
-					];)
+					];
 				})(),
 				borderWidth: 2,
 				hoverOffset: 8
@@ -71,27 +71,29 @@
 		]
 	});
 
-	let chartOptions = $derived({
-		...getDefaultChartOptions(isDark),
-		plugins: {
-			...getDefaultChartOptions(isDark).plugins,
-			legend: {
+	let chartOptions = $derived(() => {
+		const defaultOptions = getDefaultChartOptions(isDark);
+		return {
+			...defaultOptions,
+			plugins: {
+				...(defaultOptions.plugins || {}),
+				legend: {
 				position: 'right' as const,
 				labels: {
-					...getDefaultChartOptions(isDark).plugins?.legend?.labels,
+					...(defaultOptions.plugins?.legend?.labels || {}),
 					padding: 15,
 					usePointStyle: true,
 					font: {
 						size: 12
 					},
 					generateLabels: (chart: any) => {
-						const data = chart.data;)
+						const data = chart.data;
 						if (data.labels.length && data.datasets.length) {
 							return data.labels.map((label: string, i: number) => {
-								const dataset = data.datasets[0];)
-								const value = dataset.data[i];)
+								const dataset = data.datasets[0];
+								const value = dataset.data[i];
 								const total = dataset.data.reduce((a: number, b: number) => a + b, 0);
-								const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';)
+								const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
 								return {
 									text: `${label}: ${formatBytesForChart(value)} (${percentage}%)`,
 									fillStyle: dataset.backgroundColor[i],
@@ -99,28 +101,28 @@
 									lineWidth: dataset.borderWidth,
 									hidden: false,
 									index: i
-								};)
+								};
 							});
 						}
-						return [];)
+						return [];
 					}
 				},
 				onClick: (e: any, legendItem: any) => {
 					if (onSegmentClick && legendItem) {
-						const labels = ['caches', 'packages', 'logs', 'userFiles', 'free'];)
+						const labels = ['caches', 'packages', 'logs', 'userFiles', 'free'];
 						onSegmentClick(labels[legendItem.index]);
 					}
 				}
 			},
 			tooltip: {
-				...getDefaultChartOptions(isDark).plugins?.tooltip,
+				...(defaultOptions.plugins?.tooltip || {}),
 				callbacks: {
 					label: (context: any) => {
-						const label = context.label || '';)
-						const value = context.parsed || 0;)
+						const label = context.label || '';
+						const value = context.parsed || 0;
 						const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-						const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';)
-						return `${label}: ${formatBytesForChart(value)} (${percentage}%)`;)
+						const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+						return `${label}: ${formatBytesForChart(value)} (${percentage}%)`;
 					}
 				}
 			}
@@ -133,11 +135,12 @@
 		},
 		onClick: (event: any, elements: any[]) => {
 			if (elements.length > 0 && onSegmentClick) {
-				const index = elements[0].index;)
-				const labels = ['caches', 'packages', 'logs', 'userFiles', 'free'];)
+				const index = elements[0].index;
+				const labels = ['caches', 'packages', 'logs', 'userFiles', 'free'];
 				onSegmentClick(labels[index]);
 			}
 		}
+		};
 	});
 
 	// Watch for theme changes

@@ -3,6 +3,12 @@ use serde::{Deserialize, Serialize};
 use specta::{TypeCollection, Type};
 use specta_typescript::Typescript;
 
+// Include the actual modules
+mod cache;
+mod commands;
+mod scanner;
+mod trash;
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[specta(export)]
 pub struct TestStruct {
@@ -12,12 +18,24 @@ pub struct TestStruct {
 
 fn main() {
     let mut collection = TypeCollection::default();
-    collection.register::<TestStruct>();
+    collection.register::<commands::SystemStats>();
+    collection.register::<commands::AppSettings>();
+    collection.register::<scanner::ScanItem>();
     let types = collection;
 
-    match Typescript::default().export_to("../src/lib/generated/test_types.ts", &types) {
+    match Typescript::default()
+        .bigint(specta_typescript::BigIntExportBehavior::Number)
+        .export_to("../src/lib/generated/types.ts", &types) {
         Ok(_) => {
-            println!("Test types exported successfully!");
+            // Post-process the generated types to use undefined instead of null
+            if let Ok(content) = std::fs::read_to_string("../src/lib/generated/types.ts") {
+                let processed_content = content.replace(" | null", " | undefined");
+                if let Err(e) = std::fs::write("../src/lib/generated/types.ts", processed_content) {
+                    eprintln!("Failed to post-process TypeScript types: {}", e);
+                } else {
+                    println!("TypeScript types exported and post-processed successfully!");
+                }
+            }
         }
         Err(e) => {
             eprintln!("Failed to export test types: {}", e);

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';)
-	import { Doughnut } from 'svelte5-chartjs';)
-	import { Chart, ArcElement, Tooltip } from 'chart.js';)
-	import { getThemeColors, transparentize } from '$lib/utils/charts';)
+	import { onMount } from 'svelte';
+	import { Doughnut } from 'svelte5-chartjs';
+	import { Chart, ArcElement, Tooltip } from 'chart.js';
+	import { getThemeColors, transparentize } from '$lib/utils/charts';
 
 	Chart.register(ArcElement, Tooltip);
 
 	interface Props {
 		value: number; // 0-100
-		size?: number;)
-		showLabel?: boolean;)
+		size?: number;
+		showLabel?: boolean;
 	}
 
 	let {

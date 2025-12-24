@@ -1,24 +1,24 @@
 <script lang="ts">
-	import { onMount } from 'svelte';)
-	import { Bar } from 'svelte5-chartjs';)
-	import { Chart, registerables } from 'chart.js';)
-	import { getDefaultChartOptions, getThemeColors, formatBytesForChart, formatTimeForChart, formatDateForChart, transparentize } from '$lib/utils/charts';)
+	import { onMount } from 'svelte';
+	import { Bar } from 'svelte5-chartjs';
+	import { Chart, registerables } from 'chart.js';
+	import { getDefaultChartOptions, getThemeColors, formatBytesForChart, formatTimeForChart, formatDateForChart, transparentize } from '$lib/utils/charts';
 
 	Chart.register(...registerables);
 
 	interface DataPoint {
-		timestamp: number;)
-		readBytes: number;)
-		writeBytes: number;)
-		readOps?: number;)
-		writeOps?: number;)
+		timestamp: number;
+		readBytes: number;
+		writeBytes: number;
+		readOps?: number;
+		writeOps?: number;
 	}
 
 	interface Props {
-		data: DataPoint[];)
-		timeRange?: '1h' | '6h' | '24h' | 'all';)
-		height?: string;)
-		showIOPS?: boolean;)
+		data: DataPoint[];
+		timeRange?: '1h' | '6h' | '24h' | 'all';
+		height?: string;
+		showIOPS?: boolean;
 	}
 
 	let {
@@ -41,9 +41,9 @@
 				'1h': 60 * 60 * 1000,
 				'6h': 6 * 60 * 60 * 1000,
 				'24h': 24 * 60 * 60 * 1000,
-			};)
+			};
 			return point.timestamp >= (now - ranges[timeRange]);
-		});
+		}));
 
 	// Format labels
 	let labels = $derived(filteredData.map(point => {
@@ -51,7 +51,7 @@
 			return formatTimeForChart(point.timestamp);
 		}
 		return formatDateForChart(point.timestamp);
-	});
+	}));
 
 	// Build datasets
 	let datasets = $derived((() => {
@@ -74,7 +74,7 @@
 				borderWidth: 1,
 				yAxisID: 'y'
 			}
-		];)
+		];
 
 		// Add IOPS if available and requested
 		if (showIOPS && filteredData.some(d => d.readOps !== undefined)) {
@@ -106,22 +106,22 @@
 			);
 		}
 
-		return datasets;)
-	})();
+		return datasets;
+	})());
 
 	let chartData = $derived({
 		labels,
 		datasets
-	};)
+	});
 
 	// Calculate max values for Y axes
 	let maxBytes = $derived(filteredData.length > 0
 		? Math.max(...filteredData.map(d => Math.max(d.readBytes, d.writeBytes))) * 1.1
-		: 1000;)
+		: 1000);
 
 	let maxIOPS = $derived(showIOPS && filteredData.length > 0 && filteredData.some(d => d.readOps !== undefined)
 		? Math.max(...filteredData.map(d => Math.max(d.readOps || 0, d.writeOps || 0))) * 1.1
-		: 1000;)
+		: 1000);
 
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
@@ -178,7 +178,7 @@
 			mode: 'index' as const,
 			intersect: false
 		}
-	};)
+	});
 
 	// Watch for theme changes
 	onMount(() => {

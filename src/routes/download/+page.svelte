@@ -34,28 +34,28 @@
 			description: 'Recommended for Ubuntu, Debian, and derivatives',
 			icon: '📦',
 			installCommand: 'sudo dpkg -i pulito_*.deb',
-			downloadUrl: '#'
+			downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases/latest/download/pulito_1.0.0_amd64.deb'
 		},
 		{
 			name: 'AppImage',
 			description: 'Universal Linux package, no installation needed',
 			icon: '📱',
 			installCommand: 'chmod +x pulito_*.AppImage && ./pulito_*.AppImage',
-			downloadUrl: '#'
+			downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases/latest/download/pulito_1.0.0_amd64.AppImage'
 		},
 		{
 			name: 'Snap',
 			description: 'Available on Snap Store (coming soon)',
 			icon: '🎯',
 			installCommand: 'sudo snap install pulito',
-			downloadUrl: '#'
+			downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases'
 		},
 		{
 			name: 'Flatpak',
 			description: 'Available on Flathub (coming soon)',
 			icon: '📦',
 			installCommand: 'flatpak install flathub com.pulito.app',
-			downloadUrl: '#'
+			downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases'
 		}
 	];
 </script>

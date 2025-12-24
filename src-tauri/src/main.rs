@@ -107,6 +107,15 @@ fn main() {
             .bigint(specta_typescript::BigIntExportBehavior::Number)
             .export_to(&output_dir.join("types.ts"), &types) {
             Ok(_) => {
+                // Post-process the generated types to use undefined instead of null
+                if let Ok(content) = std::fs::read_to_string(&output_dir.join("types.ts")) {
+                    let processed_content = content.replace(" | null", " | undefined");
+                    if let Err(e) = std::fs::write(&output_dir.join("types.ts"), processed_content) {
+                        tracing::error!("Failed to post-process TypeScript types: {}", e);
+                    } else {
+                        tracing::info!("TypeScript types exported and post-processed to use undefined instead of null");
+                    }
+                }
                 tracing::info!("TypeScript types exported to: {}", output_dir.join("types.ts").display());
             }
             Err(e) => {

@@ -1,24 +1,24 @@
 <script lang="ts">
-	import { onMount } from 'svelte';)
-	import { Line } from 'svelte5-chartjs';)
-	import { Chart, registerables } from 'chart.js';)
-	import { getDefaultChartOptions, getThemeColors, formatBytesForChart, formatTimeForChart, formatDateForChart, transparentize, createGradient } from '$lib/utils/charts';)
+	import { onMount } from 'svelte';
+	import { Line } from 'svelte5-chartjs';
+	import { Chart, registerables } from 'chart.js';
+	import { getDefaultChartOptions, getThemeColors, formatBytesForChart, formatTimeForChart, formatDateForChart, transparentize, createGradient } from '$lib/utils/charts';
 
 	Chart.register(...registerables);
 
 	interface DataPoint {
-		timestamp: number;)
-		usedMemory: number;)
-		totalMemory: number;)
-		swapUsed?: number;)
-		swapTotal?: number;)
-		cache?: number;)
+		timestamp: number;
+		usedMemory: number;
+		totalMemory: number;
+		swapUsed?: number;
+		swapTotal?: number;
+		cache?: number;
 	}
 
 	interface Props {
-		data: DataPoint[];)
-		timeRange?: '1h' | '6h' | '24h' | 'all';)
-		height?: string;)
+		data: DataPoint[];
+		timeRange?: '1h' | '6h' | '24h' | 'all';
+		height?: string;
 	}
 
 	let { data = [], timeRange = 'all', height = '300px' }: Props = $props();
@@ -36,9 +36,9 @@
 				'1h': 60 * 60 * 1000,
 				'6h': 6 * 60 * 60 * 1000,
 				'24h': 24 * 60 * 60 * 1000,
-			};)
+			};
 			return point.timestamp >= (now - ranges[timeRange]);
-		});
+		}));
 
 	// Format labels
 	let labels = $derived(filteredData.map(point => {
@@ -46,12 +46,12 @@
 			return formatTimeForChart(point.timestamp);
 		}
 		return formatDateForChart(point.timestamp);
-	});
+	}));
 
 	// Build datasets for stacked area chart
 	let datasets = $derived((() => {
 		const colors = getThemeColors(isDark);
-		const datasets: any[] = [];)
+		const datasets: any[] = [];
 
 		// RAM Used (bottom layer)
 		datasets.push({
@@ -93,18 +93,18 @@
 			});
 		}
 
-		return datasets;)
-	})();
+		return datasets;
+	})());
 
 	let chartData = $derived({
 		labels,
 		datasets
-	};)
+	});
 
 	// Calculate max value for Y axis
 	let maxValue = $derived(filteredData.length > 0
 		? Math.max(...filteredData.map(d => d.totalMemory + (d.swapTotal || 0))) * 1.1
-		: 100;)
+		: 100);
 
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
@@ -142,7 +142,7 @@
 			mode: 'index' as const,
 			intersect: false
 		}
-	};)
+	});
 
 	// Watch for theme changes
 	onMount(() => {

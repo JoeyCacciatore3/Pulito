@@ -5,7 +5,7 @@
 	import { notifyCleanupSuccess, notifyOperationError } from '$lib/utils/notification-helpers';
 	import { logger } from '$lib/utils/logger';
 	import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte';
-	import type { FilesystemHealthResults, ScanItem } from '$lib/generated/types';
+	import type { FilesystemHealthResults } from '$lib/generated/types';
 
 	// FilesystemHealthResults type is now imported from generated types
 	// Removed duplicate interface definition

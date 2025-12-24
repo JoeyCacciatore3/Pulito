@@ -133,7 +133,7 @@
 						else if (healthData.temperatures?.cpu > 70) score -= 5;
 						healthScore = Math.max(0, Math.min(100, score));
 					}
-				} catch (e) {
+				} catch (_e) {
 					// Ignore health score errors
 				}
 			} else {
@@ -220,7 +220,7 @@
 		return (stats.used_disk_space / stats.total_disk_space) * 100;
 	}
 
-	function getDiskUsageColor(): string {
+	function _getDiskUsageColor(): string {
 		const percent = getDiskUsagePercent();
 		if (percent < 60) return 'bg-safe';
 		if (percent < 80) return 'bg-caution';

@@ -18,10 +18,10 @@
 
 	interface Props {
 		node: TreeNodeData;
-		toggleNodeExpansion: (node: TreeNodeData) => void;
-		toggleNodeSelection: (node: TreeNodeData, selected: boolean) => void;
-		getRiskColor: (risk: string) => string;
-		getUsageColor: (pattern: string) => string;
+		toggleNodeExpansion: (_node: TreeNodeData) => void;
+		toggleNodeSelection: (_node: TreeNodeData, _selected: boolean) => void;
+		getRiskColor: (_risk: string) => string;
+		getUsageColor: (_pattern: string) => string;
 	}
 
 	let { node, toggleNodeExpansion, toggleNodeSelection, getRiskColor, getUsageColor }: Props = $props();

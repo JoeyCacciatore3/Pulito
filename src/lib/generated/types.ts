@@ -2,13 +2,13 @@
 
 export type AppSettings = { trash: TrashSettings; monitoring: MonitoringSettings; notifications: NotificationSettings; scan: ScanSettings; theme: string }
 
-export type BatteryInfo = { percentage: number; is_charging: boolean; time_to_full: number | null; time_to_empty: number | null; power_consumption: number | null }
+export type BatteryInfo = { percentage: number; is_charging: boolean; time_to_full: number | undefined; time_to_empty: number | undefined; power_consumption: number | undefined }
 
 export type CacheAnalytics = { total_cache_size: number; cache_breakdown: CacheContributor[]; growth_trend: CacheGrowthPoint[]; recommended_limits: Partial<{ [key in string]: number }> }
 
-export type CacheContributor = { source: string; size: number; growth_rate: number; last_activity: number; recommended_limit: number | null }
+export type CacheContributor = { source: string; size: number; growth_rate: number; last_activity: number; recommended_limit: number | undefined }
 
-export type CacheEvent = { id: number; path: string; size_change: number; event_type: string; source: string | null; timestamp: number }
+export type CacheEvent = { id: number; path: string; size_change: number; event_type: string; source: string | undefined; timestamp: number }
 
 export type CacheGrowthPoint = { timestamp: number; total_size: number; sources: Partial<{ [key in string]: number }> }
 
@@ -16,19 +16,19 @@ export type CacheItem = { name: string; size: number; category: string; can_clea
 
 export type CleanResult = { cleaned: number; failed: number; total_size: number }
 
-export type DiskPulseHealth = { disk_usage_percent: number; projected_days_until_full: number | null; status_color: string; status_message: string }
+export type DiskPulseHealth = { disk_usage_percent: number; projected_days_until_full: number | undefined; status_color: string; status_message: string }
 
 export type DuplicateGroup = { id: string; files: ScanItem[]; total_size: number; group_size: number }
 
 export type FilesystemHealthResults = { empty_directories: ScanItem[]; broken_symlinks: ScanItem[]; orphaned_temp_files: ScanItem[]; total_size: number; total_items: number }
 
-export type GpuInfo = { name: string; usage: number; memory_used: number; memory_total: number; temperature: number | null }
+export type GpuInfo = { name: string; usage: number; memory_used: number; memory_total: number; temperature: number | undefined }
 
 export type LoadAverage = { one_minute: number; five_minutes: number; fifteen_minutes: number }
 
 export type MonitoringSettings = { enabled: boolean; interval_hours: number }
 
-export type NetworkConnection = { local_address: string; remote_address: string; local_port: number; remote_port: number; state: string; process_name: string | null; process_pid: number | null }
+export type NetworkConnection = { local_address: string; remote_address: string; local_port: number; remote_port: number; state: string; process_name: string | undefined; process_pid: number | undefined }
 
 export type NetworkInterfaceInfo = { name: string; received: number; transmitted: number; packets_received: number; packets_transmitted: number; errors_received: number; errors_transmitted: number }
 
@@ -36,9 +36,9 @@ export type NotificationSettings = { system: boolean; tray: boolean; in_app: boo
 
 export type OldFilesSummary = { total_files: number; total_size: number; cutoff_days: number }
 
-export type ProcessInfo = { pid: number; name: string; cpu_usage: number; memory_usage: number; status: string; user_id: number | null }
+export type ProcessInfo = { pid: number; name: string; cpu_usage: number; memory_usage: number; status: string; user_id: number | undefined }
 
-export type ScanItem = { id: string; name: string; path: string; size: number; type: string; category: string; risk_level: number; description: string; children?: ScanItem[] | null; dependencies?: string[] | null; dependents?: string[] | null }
+export type ScanItem = { id: string; name: string; path: string; size: number; type: string; category: string; risk_level: number; description: string; children?: ScanItem[] | undefined; dependencies?: string[] | undefined; dependents?: string[] | undefined }
 
 export type ScanOptions = { include_caches: boolean; include_packages: boolean; include_large_files: boolean; include_logs: boolean }
 
@@ -48,19 +48,19 @@ export type ScanSettings = { include_hidden: boolean; large_file_threshold_mb: n
 
 export type StorageRecoveryResults = { duplicates: DuplicateGroup[]; large_files: ScanItem[]; old_downloads: ScanItem[]; total_duplicate_size: number; total_large_files_size: number; total_old_downloads_size: number; total_recoverable_size: number }
 
-export type SystemHealthData = { cpu_usage: number; cpu_cores: number; cpu_frequency: number; core_usages: number[]; total_memory: number; used_memory: number; available_memory: number; gpu_info: GpuInfo | null; network_up: number; network_down: number; network_interfaces: NetworkInterfaceInfo[]; active_connections: NetworkConnection[]; temperatures: Temperatures; disk_read_bytes: number; disk_write_bytes: number; disk_read_ops: number; disk_write_ops: number; battery_info: BatteryInfo | null; top_processes: ProcessInfo[]; load_average: LoadAverage | null; swap_total: number; swap_used: number; timestamp: number }
+export type SystemHealthData = { cpu_usage: number; cpu_cores: number; cpu_frequency: number; core_usages: number[]; total_memory: number; used_memory: number; available_memory: number; gpu_info: GpuInfo | undefined; network_up: number; network_down: number; network_interfaces: NetworkInterfaceInfo[]; active_connections: NetworkConnection[]; temperatures: Temperatures; disk_read_bytes: number; disk_write_bytes: number; disk_read_ops: number; disk_write_ops: number; battery_info: BatteryInfo | undefined; top_processes: ProcessInfo[]; load_average: LoadAverage | undefined; swap_total: number; swap_used: number; timestamp: number }
 
-export type SystemStats = { total_disk_space: number; used_disk_space: number; cleanable_space: number; last_scan: string | null; packages_installed: number; orphan_packages: number; cache_size: number; filesystem_health_savings: number | null; storage_recovery_savings: number | null; orphan_packages_size: number | null }
+export type SystemStats = { total_disk_space: number; used_disk_space: number; cleanable_space: number; last_scan: string | undefined; packages_installed: number; orphan_packages: number; cache_size: number; filesystem_health_savings: number | undefined; storage_recovery_savings: number | undefined; orphan_packages_size: number | undefined }
 
-export type Temperatures = { cpu: number; cpu_sensors: number; system: number; gpu: number | null }
+export type Temperatures = { cpu: number; cpu_sensors: number; system: number; gpu: number | undefined }
 
 export type TrashData = { items: TrashItem[]; total_size: number; total_items: number }
 
-export type TrashItem = { id: string; original_path: string; trash_path: string; deleted_at: string; expires_at: string; size: number; item_type: string; metadata: TrashMetadata | null }
+export type TrashItem = { id: string; original_path: string; trash_path: string; deleted_at: string; expires_at: string; size: number; item_type: string; metadata: TrashMetadata | undefined }
 
 export type TrashMetadata = { category: string; risk_level: number; reason: string }
 
 export type TrashSettings = { retention_days: number; max_size_mb: number }
 
-export type TreeNode = { id: string; name: string; path: string; size: number; isDirectory: boolean; lastModified: number; lastAccessed: number; children?: TreeNode[] | null; expanded: boolean; selected: boolean; riskLevel: string; aiInsight?: string | null; usagePattern?: string | null }
+export type TreeNode = { id: string; name: string; path: string; size: number; isDirectory: boolean; lastModified: number; lastAccessed: number; children?: TreeNode[] | undefined; expanded: boolean; selected: boolean; riskLevel: string; aiInsight?: string | undefined; usagePattern?: string | undefined }
 

@@ -1,27 +1,27 @@
 <script lang="ts">
-	import { onMount } from 'svelte';)
-	import { Line } from 'svelte5-chartjs';)
-	import { Chart, registerables } from 'chart.js';)
-	import { getDefaultChartOptions, getThemeColors, formatTimeForChart, formatDateForChart, getTemperatureColor, transparentize } from '$lib/utils/charts';)
+	import { onMount } from 'svelte';
+	import { Line } from 'svelte5-chartjs';
+	import { Chart, registerables } from 'chart.js';
+	import { getDefaultChartOptions, getThemeColors, formatTimeForChart, formatDateForChart, getTemperatureColor, transparentize } from '$lib/utils/charts';
 
 	Chart.register(...registerables);
 
 	interface DataPoint {
-		timestamp: number;)
-		cpu: number;)
-		gpu?: number;)
-		system: number;)
+		timestamp: number;
+		cpu: number;
+		gpu?: number;
+		system: number;
 	}
 
 	interface Props {
-		data: DataPoint[];)
-		timeRange?: '1h' | '6h' | '24h' | 'all';)
-		height?: string;)
+		data: DataPoint[];
+		timeRange?: '1h' | '6h' | '24h' | 'all';
+		height?: string;
 		thresholds?: {
-			good: number;)
-			warning: number;)
-			critical: number;)
-		};)
+			good: number;
+			warning: number;
+			critical: number;
+		};
 	}
 
 	let {
@@ -44,9 +44,9 @@
 				'1h': 60 * 60 * 1000,
 				'6h': 6 * 60 * 60 * 1000,
 				'24h': 24 * 60 * 60 * 1000,
-			};)
+			};
 			return point.timestamp >= (now - ranges[timeRange]);
-		});
+		}));
 
 	// Format labels
 	let labels = $derived(filteredData.map(point => {
@@ -54,12 +54,12 @@
 			return formatTimeForChart(point.timestamp);
 		}
 		return formatDateForChart(point.timestamp);
-	});
+	}));
 
 	// Build datasets
 	let datasets = $derived((() => {
 		const colors = getThemeColors(isDark);
-		const datasets: any[] = [];)
+		const datasets: any[] = [];
 
 		// CPU Temperature
 		datasets.push({
@@ -126,13 +126,13 @@
 			borderWidth: 2
 		});
 
-		return datasets;)
-	})();
+		return datasets;
+	})());
 
 	let chartData = $derived({
 		labels,
 		datasets
-	};)
+	});
 
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
@@ -144,7 +144,7 @@
 				intersect: false,
 				callbacks: {
 					label: (context: any) => {
-						return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}°C`;)
+						return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}°C`;
 					}
 				}
 			},
@@ -166,7 +166,7 @@
 			mode: 'index' as const,
 			intersect: false
 		}
-	};)
+	});
 
 	// Watch for theme changes
 	onMount(() => {

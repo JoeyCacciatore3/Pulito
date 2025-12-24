@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { invoke, formatBytes } from '$lib/utils/tauri';
-	import { navigation } from '$lib/stores/navigation.svelte';
 	import { confirmation } from '$lib/stores/confirmation.svelte';
 	import { notificationStore } from '$lib/stores/notifications.svelte';
 	import { logger } from '$lib/utils/logger';
@@ -243,7 +242,7 @@
 		}
 	}
 
-	function getRiskAssessment(items: CleanupItem[]): string {
+	function _getRiskAssessment(items: CleanupItem[]): string {
 		const highRisk = items.filter(item => item.risk === 'warning').length;
 		const mediumRisk = items.filter(item => item.risk === 'caution').length;
 
@@ -252,7 +251,7 @@
 		return 'Low Risk - Safe to Proceed';
 	}
 
-	function generateAIInsights(items: CleanupItem[], stats: any): string[] {
+	function _generateAIInsights(items: CleanupItem[], stats: any): string[] {
 		const insights = [];
 
 		if (items.some(item => item.category === 'cache' && item.size > 500 * 1024 * 1024)) {
@@ -363,7 +362,7 @@
 		getSmartRecommendations();
 	});
 
-	function getRiskColor(risk: string): string {
+	function _getRiskColor(risk: string): string {
 		switch (risk) {
 			case 'safe': return 'text-green-600 bg-green-50 border-green-200';
 			case 'caution': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
@@ -372,7 +371,7 @@
 		}
 	}
 
-	function getConfidenceColor(confidence: number): string {
+	function _getConfidenceColor(confidence: number): string {
 		if (confidence >= 90) return 'text-green-600';
 		if (confidence >= 70) return 'text-yellow-600';
 		return 'text-red-600';
@@ -431,7 +430,7 @@
 		};
 	}
 
-	async function analyzeStoragePatterns(stats: any, health: any): Promise<{
+	async function analyzeStoragePatterns(stats: any, _health: any): Promise<{
 		recommendations: string[];
 		totalPotentialSavings: number;
 		currentUsage: number;
@@ -495,7 +494,7 @@
 		return `Low Risk (${totalSelected - mediumRisk - highRisk} safe operations) - Recommended for automated cleanup`;
 	}
 
-	function generateComprehensiveAIInsights(items: CleanupItem[], stats: any, health: any): string[] {
+	function generateComprehensiveAIInsights(items: CleanupItem[], stats: any, _health: any): string[] {
 		const insights = [];
 
 		// Overall system health insights

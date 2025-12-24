@@ -1,16 +1,16 @@
 <script lang="ts">
-	import { onMount } from 'svelte';)
-	import { Line } from 'svelte5-chartjs';)
-	import { Chart, registerables } from 'chart.js';)
-	import { getThemeColors, transparentize } from '$lib/utils/charts';)
+	import { onMount } from 'svelte';
+	import { Line } from 'svelte5-chartjs';
+	import { Chart, registerables } from 'chart.js';
+	import { getThemeColors, transparentize } from '$lib/utils/charts';
 
 	Chart.register(...registerables);
 
 	interface Props {
-		data: number[];)
-		color?: string;)
-		height?: number;)
-		width?: string;)
+		data: number[];
+		color?: string;
+		height?: number;
+		width?: string;
 	}
 
 	let {

@@ -16,9 +16,6 @@
 	import PerformanceSummary from '$lib/components/health/PerformanceSummary.svelte';
 	import type {
 		SystemHealthData,
-		NetworkInterfaceInfo,
-		NetworkConnection,
-		ProcessInfo,
 	} from '$lib/generated/types';
 
 	let healthData = $state<SystemHealthData | null>(null);
