@@ -30,6 +30,22 @@ function isPerformanceEventTiming(entry: PerformanceEntry): entry is Performance
 }
 
 /**
+ * LayoutShift interface for Cumulative Layout Shift entries
+ * @see https://developer.mozilla.org/en-US/docs/Web/API/LayoutShift
+ */
+interface LayoutShift extends PerformanceEntry {
+	value: number;
+	hadRecentInput: boolean;
+	sources: ReadonlyArray<LayoutShiftAttribution>;
+}
+
+interface LayoutShiftAttribution {
+	node?: Node;
+	previousRect: DOMRectReadOnly;
+	currentRect: DOMRectReadOnly;
+}
+
+/**
  * Type guard for LayoutShift (Cumulative Layout Shift)
  */
 function isLayoutShift(entry: PerformanceEntry): entry is LayoutShift {

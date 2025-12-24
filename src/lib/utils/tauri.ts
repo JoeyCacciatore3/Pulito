@@ -18,7 +18,7 @@ interface IPCRequest<T = unknown> {
 	cmd: string;
 	args: InvokeArgs;
 	options: IPCOptions;
-	resolve: (_value: T) => void;
+	resolve: (_value: T | PromiseLike<T>) => void;
 	reject: (_error: unknown) => void;
 	timestamp: number;
 	attempts: number;
@@ -33,7 +33,7 @@ interface IPCOptions {
 }
 
 class IPCManager {
-	private queue: IPCRequest[] = [];
+	private queue: IPCRequest<unknown>[] = [];
 	private isProcessing = false;
 	private retryAttempts = new Map<string, number>();
 	private readonly maxRetries = 3;
@@ -51,7 +51,7 @@ class IPCManager {
 		const requestId = `${cmd}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 		return new Promise<T>((resolve, reject) => {
-			const request: IPCRequest = {
+			const request: IPCRequest<T> = {
 				id: requestId,
 				cmd,
 				args,
@@ -62,14 +62,14 @@ class IPCManager {
 				attempts: 0
 			};
 
-			this.addToQueue(request);
+			this.addToQueue(request as IPCRequest<unknown>);
 		});
 	}
 
 	/**
 	 * Add request to queue with priority sorting
 	 */
-	private addToQueue(request: IPCRequest) {
+	private addToQueue(request: IPCRequest<unknown>) {
 		// Insert based on priority (high priority first)
 		const priorityOrder = { high: 0, normal: 1, low: 2 };
 		const insertIndex = this.queue.findIndex(
@@ -115,13 +115,13 @@ class IPCManager {
 	/**
 	 * Execute a single request with retry logic
 	 */
-	private async executeRequest<T>(request: IPCRequest<T>): Promise<void> {
+		private async executeRequest(request: IPCRequest<unknown>): Promise<void> {
 		const { cmd, args, options, resolve, reject } = request;
 		const timeout = options.timeout ?? 30000; // 30 second default
 
 		try {
 			// Execute with timeout
-			const result = await this.executeWithTimeout<T>(cmd, args, timeout);
+			const result = await this.executeWithTimeout(cmd, args, timeout);
 
 			// Reset retry count on success
 			this.retryAttempts.delete(request.id);
@@ -136,12 +136,12 @@ class IPCManager {
 	 * Execute IPC call with timeout
 	 */
 	private async executeWithTimeout<T = unknown>(cmd: string, args: InvokeArgs, timeout: number): Promise<T> {
-		return new Promise((resolve, reject) => {
+		return new Promise<T>((resolve, reject) => {
 			const timeoutId = setTimeout(() => {
 				reject(new Error(`IPC call '${cmd}' timed out after ${timeout}ms`));
 			}, timeout);
 
-			tauriInvoke(cmd, args)
+			tauriInvoke<T>(cmd, args)
 				.then(result => {
 					clearTimeout(timeoutId);
 					resolve(result);
@@ -156,7 +156,7 @@ class IPCManager {
 	/**
 	 * Handle request errors with retry logic
 	 */
-	private async handleRequestError<T>(request: IPCRequest<T>, error: unknown, reject: (_error: unknown) => void) {
+	private async handleRequestError(request: IPCRequest<unknown>, error: unknown, reject: (_error: unknown) => void) {
 		request.attempts++;
 		const shouldRetry = request.options.retry !== false &&
 						   request.attempts < this.maxRetries &&
