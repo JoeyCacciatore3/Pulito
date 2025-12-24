@@ -47,6 +47,7 @@ impl CacheManager {
     }
 
     /// Create a cache manager with custom TTLs
+    #[allow(dead_code)]
     pub fn with_ttls(dir_size_ttl: Duration, scan_result_ttl: Duration) -> Self {
         Self {
             dir_sizes: Arc::new(RwLock::new(HashMap::new())),
@@ -57,6 +58,7 @@ impl CacheManager {
     }
 
     /// Get cached directory size, or None if not cached or expired
+    #[allow(dead_code)]
     pub async fn get_dir_size(&self, path: &PathBuf) -> Option<u64> {
         let cache = self.dir_sizes.read().await;
         if let Some(entry) = cache.get(path) {
@@ -68,6 +70,7 @@ impl CacheManager {
     }
 
     /// Cache a directory size
+    #[allow(dead_code)]
     pub async fn set_dir_size(&self, path: PathBuf, size: u64) {
         let mut cache = self.dir_sizes.write().await;
         cache.insert(path, CacheEntry {
@@ -77,6 +80,7 @@ impl CacheManager {
     }
 
     /// Get cached scan results, or None if not cached or expired
+    #[allow(dead_code)]
     pub async fn get_scan_results(&self, key: &str) -> Option<ScanCacheEntry> {
         let cache = self.scan_results.read().await;
         if let Some(entry) = cache.get(key) {
@@ -88,6 +92,7 @@ impl CacheManager {
     }
 
     /// Cache scan results
+    #[allow(dead_code)]
     pub async fn set_scan_results(&self, key: String, results: ScanCacheEntry) {
         let mut cache = self.scan_results.write().await;
         cache.insert(key, CacheEntry {
@@ -97,6 +102,7 @@ impl CacheManager {
     }
 
     /// Clear expired entries from directory size cache
+    #[allow(dead_code)]
     pub async fn cleanup_dir_sizes(&self) {
         let now = Instant::now();
         let mut cache = self.dir_sizes.write().await;
@@ -104,6 +110,7 @@ impl CacheManager {
     }
 
     /// Clear expired entries from scan results cache
+    #[allow(dead_code)]
     pub async fn cleanup_scan_results(&self) {
         let now = Instant::now();
         let mut cache = self.scan_results.write().await;
@@ -111,6 +118,7 @@ impl CacheManager {
     }
 
     /// Clear all caches
+    #[allow(dead_code)]
     pub async fn clear_all(&self) {
         let mut dir_cache = self.dir_sizes.write().await;
         dir_cache.clear();
@@ -121,6 +129,7 @@ impl CacheManager {
     }
 
     /// Get cache statistics
+    #[allow(dead_code)]
     pub async fn stats(&self) -> CacheStats {
         let dir_cache = self.dir_sizes.read().await;
         let scan_cache = self.scan_results.read().await;
