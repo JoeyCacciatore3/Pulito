@@ -107,7 +107,7 @@
 		? Math.max(...filteredData.map(d => d.totalMemory + (d.swapTotal || 0))) * 1.1
 		: 100);
 
-		const defaultOptions = getDefaultChartOptions(isDark);\t	return {
+		const defaultOptions = getDefaultChartOptions(isDark);	return {
 			...(defaultOptions.plugins ?? {}),
 			tooltip: {
 				...(defaultOptions.plugins?.tooltip ?? {}),
