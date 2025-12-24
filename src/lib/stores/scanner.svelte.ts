@@ -1,62 +1,10 @@
 // Scanner store using Svelte 5 runes
 
-// Import and re-export all types from generated types
+// Import only types used within this store
 import type {
 	ScanItem,
 	ScanResults,
-	FilesystemHealthResults,
-	StorageRecoveryResults,
-	DuplicateGroup,
-	CacheAnalytics,
-	CacheContributor,
-	CacheGrowthPoint,
-	DiskPulseHealth,
-	OldFilesSummary,
-	CacheEvent,
-	CacheItem,
-	SystemHealthData,
-	GpuInfo,
-	Temperatures,
-	CleanResult,
-	TrashData,
-	TrashItem,
-	TrashMetadata,
-	NetworkInterfaceInfo,
-	NetworkConnection,
-	ProcessInfo,
-	BatteryInfo,
-	LoadAverage,
-	TreeNode,
 } from '$lib/generated/types';
-
-// Re-export types for backward compatibility
-export type {
-	ScanItem,
-	ScanResults,
-	FilesystemHealthResults,
-	StorageRecoveryResults,
-	DuplicateGroup,
-	CacheAnalytics,
-	CacheContributor,
-	CacheGrowthPoint,
-	DiskPulseHealth,
-	OldFilesSummary,
-	CacheEvent,
-	CacheItem,
-	SystemHealthData,
-	GpuInfo,
-	Temperatures,
-	CleanResult,
-	TrashData,
-	TrashItem,
-	TrashMetadata,
-	NetworkInterfaceInfo,
-	NetworkConnection,
-	ProcessInfo,
-	BatteryInfo,
-	LoadAverage,
-	TreeNode,
-};
 
 // State
 let scanResults = $state<ScanResults | null>(null);

@@ -220,7 +220,7 @@ fn main() {
             commands::get_recent_cache_events,
             commands::get_cache_items,
             commands::clear_cache_item,
-            // commands::cleanup_old_files,
+            commands::cleanup_old_files,
             commands::update_tray_icon,
         ])
         .run(tauri::generate_context!())

@@ -15,21 +15,6 @@ use crate::db::DbAccess;
 use crate::scanner::{self, ScanOptions, ScanResults, FilesystemHealthResults, StorageRecoveryResults};
 use crate::trash::{self, TrashData, TrashMetadata};
 
-// Helper function for database access - temporarily commented out
-// fn with_db<F, T>(app_handle: &tauri::AppHandle, f: F) -> Result<T, String>
-// where
-//     F: FnOnce(&rusqlite::Connection) -> Result<T, rusqlite::Error>,
-// {
-//     let state: tauri::State<AppState> = app_handle.state();
-//     let db = state.db.lock()
-//         .map_err(|e| format!("Mutex lock failed: {}", e))?;
-
-//     let conn = db.as_ref()
-//         .ok_or_else(|| "Database not initialized".to_string())?;
-
-//     f(conn).map_err(|e| format!("Database error: {}", e))
-// }
-
 // Cache analytics structures
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[specta(export)]
@@ -308,6 +293,7 @@ impl Default for AppSettings {
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn initialize_app() -> Result<(), String> {
     tracing::info!("Initializing application...");
@@ -319,6 +305,7 @@ pub async fn initialize_app() -> Result<(), String> {
     Ok(())
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_system_stats(app_handle: tauri::AppHandle) -> Result<SystemStats, String> {
     let disks = Disks::new_with_refreshed_list();
@@ -616,6 +603,7 @@ fn get_gpu_info_from_components(components: &sysinfo::Components) -> Option<GpuI
         })
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_system_health() -> Result<SystemHealthData, String> {
     // Set timeout for system health monitoring (30 seconds)
@@ -938,6 +926,7 @@ pub async fn get_system_health() -> Result<SystemHealthData, String> {
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn start_scan(options: ScanOptions) -> Result<ScanResults, String> {
     tracing::info!("Starting system scan with async operations");
@@ -967,6 +956,7 @@ pub async fn start_scan(options: ScanOptions) -> Result<ScanResults, String> {
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn scan_filesystem_health(app_handle: tauri::AppHandle) -> Result<FilesystemHealthResults, String> {
     tracing::info!("Starting filesystem health check");
@@ -1124,6 +1114,7 @@ fn populate_file_access_table(app_handle: &tauri::AppHandle, files: &[scanner::S
 
 /// Dedicated scan command for DiskPulse that populates file_access table
 /// This is optimized for finding unused files rather than full system analysis
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn scan_for_old_files(_app_handle: tauri::AppHandle) -> Result<ScanResults, String> {
     // Temporarily disabled due to compilation issues
@@ -1131,6 +1122,7 @@ pub async fn scan_for_old_files(_app_handle: tauri::AppHandle) -> Result<ScanRes
 }
 
 /// Scan filesystem and return tree structure for File Explorer
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn scan_filesystem_tree(
     root_path: String,
@@ -1407,6 +1399,7 @@ fn assess_risk_level(path: &Path, is_directory: bool) -> String {
     "safe".to_string()
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn scan_storage_recovery(app_handle: tauri::AppHandle) -> Result<StorageRecoveryResults, String> {
     tracing::info!("Starting storage recovery scan");
@@ -1653,7 +1646,7 @@ fn validate_filesystem_boundaries(canonical_path: &std::path::Path, _context: &S
             message: "Cannot determine home directory".to_string()
         })?;
 
-    let home_str = home.to_string_lossy();
+    let _home_str = home.to_string_lossy();
 
     // Most operations should be within user's home directory
     if !canonical_path.starts_with(home) {
@@ -1725,6 +1718,7 @@ fn validate_permissions(canonical_path: &std::path::Path) -> Result<(), Security
 /// - item_paths: Array of absolute paths to clean
 /// - use_trash: Whether to use trash system (recommended: true)
 /// - retention_days: Days to retain items in trash (default: 3)
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn clean_items(
     item_ids: Vec<String>,
@@ -1818,6 +1812,7 @@ async fn clean_items_inner(
     Ok(CleanResult { cleaned, failed, total_size })
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_trash_items() -> Result<TrashData, String> {
     // Set a timeout for trash operations (10 seconds - file system operations)
@@ -1834,6 +1829,7 @@ pub async fn get_trash_items() -> Result<TrashData, String> {
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn restore_from_trash(id: String) -> Result<(), String> {
     // Set a timeout for trash operations (10 seconds - file system operations)
@@ -1850,6 +1846,7 @@ pub async fn restore_from_trash(id: String) -> Result<(), String> {
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn delete_from_trash(id: String) -> Result<(), String> {
     // Set a timeout for trash operations (10 seconds - file system operations)
@@ -1866,6 +1863,7 @@ pub async fn delete_from_trash(id: String) -> Result<(), String> {
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn empty_trash() -> Result<usize, String> {
     // Set a timeout for trash operations (30 seconds - bulk file operations)
@@ -1882,6 +1880,7 @@ pub async fn empty_trash() -> Result<usize, String> {
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_settings(app_handle: tauri::AppHandle) -> Result<AppSettings, String> {
     // Set a timeout for settings operations (5 seconds - database read)
@@ -1909,6 +1908,7 @@ pub async fn get_settings(app_handle: tauri::AppHandle) -> Result<AppSettings, S
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn save_settings(app_handle: tauri::AppHandle, settings: AppSettings) -> Result<(), String> {
     // Set a timeout for settings operations (5 seconds - database write)
@@ -1944,6 +1944,7 @@ pub async fn save_settings(app_handle: tauri::AppHandle, settings: AppSettings) 
 /// - Type: 'warning' (moderate risk)
 /// - Message: "This will clear application caches and temporary files. This is generally safe but may require applications to rebuild their caches."
 /// - Requires explicit user confirmation before proceeding
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn clear_cache() -> Result<CleanResult, String> {
     tracing::info!("Clearing user cache directories");
@@ -2033,6 +2034,7 @@ pub async fn clear_cache() -> Result<CleanResult, String> {
 /// - Type: 'warning' (moderate risk)
 /// - Message: "This will clean package manager cache and remove orphaned packages. This operation may require administrator privileges."
 /// - Requires explicit user confirmation before proceeding
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn clean_packages() -> Result<CleanResult, String> {
     tracing::info!("Cleaning package manager caches and orphaned packages");
@@ -2128,6 +2130,7 @@ pub async fn clean_packages() -> Result<CleanResult, String> {
 /// - Type: 'warning' (moderate risk)
 /// - Message: "This will clear old system logs. Important logs may be preserved. This operation requires administrator privileges."
 /// - Requires explicit user confirmation before proceeding
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn clear_logs() -> Result<CleanResult, String> {
     tracing::info!("Clearing old user logs");
@@ -2214,6 +2217,7 @@ impl Default for MonitoringState {
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn start_diskpulse_monitoring(app_handle: tauri::AppHandle) -> Result<(), String> {
     let mut state = MONITORING_STATE.lock().await;
@@ -2258,6 +2262,7 @@ pub async fn start_diskpulse_monitoring(app_handle: tauri::AppHandle) -> Result<
     Ok(())
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn stop_diskpulse_monitoring(app_handle: tauri::AppHandle) -> Result<(), String> {
     let mut state = MONITORING_STATE.lock().await;
@@ -2389,6 +2394,7 @@ async fn handle_cache_event(app_handle: &tauri::AppHandle, event: notify::Result
 }
 
 // DiskPulse UI data commands
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_diskpulse_health(app_handle: tauri::AppHandle) -> Result<DiskPulseHealth, String> {
     let stats = get_system_stats(app_handle.clone()).await?;
@@ -2473,6 +2479,7 @@ pub async fn get_diskpulse_health(app_handle: tauri::AppHandle) -> Result<DiskPu
     })
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_old_files_summary(app_handle: tauri::AppHandle, days_cutoff: u32) -> Result<OldFilesSummary, String> {
     let cutoff_timestamp = chrono::Utc::now().timestamp() - (days_cutoff as i64 * 24 * 3600);
@@ -2503,6 +2510,7 @@ pub async fn get_old_files_summary(app_handle: tauri::AppHandle, days_cutoff: u3
     Ok(result)
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_recent_cache_events(app_handle: tauri::AppHandle, limit: usize) -> Result<Vec<CacheEvent>, String> {
     let events = app_handle.db(|conn| {
@@ -2529,6 +2537,7 @@ pub async fn get_recent_cache_events(app_handle: tauri::AppHandle, limit: usize)
     Ok(events)
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_cache_items() -> Result<Vec<CacheItem>, String> {
     let mut items = Vec::new();
@@ -2590,6 +2599,7 @@ pub async fn get_cache_items() -> Result<Vec<CacheItem>, String> {
     Ok(items)
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn clear_cache_item(item_name: String) -> Result<CleanResult, String> {
     match item_name.as_str() {
@@ -2600,6 +2610,7 @@ pub async fn clear_cache_item(item_name: String) -> Result<CleanResult, String> 
     }
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn cleanup_old_files(app_handle: tauri::AppHandle, days_cutoff: u32) -> Result<CleanResult, String> {
     let cutoff_timestamp = chrono::Utc::now().timestamp() - (days_cutoff as i64 * 24 * 3600);
@@ -2673,6 +2684,7 @@ pub async fn cleanup_old_files(app_handle: tauri::AppHandle, days_cutoff: u32) -
 }
 
 // Cache Optimization Suite commands
+#[allow(dead_code)]
 #[tauri::command]
 pub async fn get_cache_analytics(app_handle: tauri::AppHandle) -> Result<CacheAnalytics, String> {
     // Set a timeout for cache analytics (30 seconds - database operations)
@@ -2808,6 +2820,7 @@ fn create_fallback_icon(status_color: &str) -> tauri::image::Image<'static> {
     Image::new_owned(rgba, 32, 32)
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 #[cfg(desktop)]
 pub async fn update_tray_icon(app_handle: tauri::AppHandle, status_color: String) -> Result<(), String> {
@@ -2847,6 +2860,7 @@ pub async fn update_tray_icon(app_handle: tauri::AppHandle, status_color: String
     Ok(())
 }
 
+#[allow(dead_code)]
 #[tauri::command]
 #[cfg(not(desktop))]
 pub async fn update_tray_icon(_app_handle: tauri::AppHandle, _status_color: String) -> Result<(), String> {

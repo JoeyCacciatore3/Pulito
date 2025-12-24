@@ -2,7 +2,7 @@
 
 ## Overview
 
-Pulito exposes 26 Tauri IPC commands for communication between the frontend (Svelte) and backend (Rust). All commands are async and return `Result<T, String>` for error handling.
+Pulito exposes 27 Tauri IPC commands for communication between the frontend (Svelte) and backend (Rust). All commands are async and return `Result<T, String>` for error handling.
 
 ## Type Definitions
 
@@ -43,6 +43,7 @@ The `invoke` wrapper provides:
 6. **Settings Management** (2 commands)
 7. **DiskPulse Monitoring** (7 commands)
 8. **Cache Management** (3 commands)
+9. **Old Files Cleanup** (1 command)
 
 ## Command Reference
 

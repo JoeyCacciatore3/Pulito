@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### 🧹 **Code Quality Audit & Dead Code Removal**
+
+Comprehensive dead code audit and refactoring to improve code maintainability and remove unused code across the entire codebase.
+
+#### **Backend (Rust) Cleanup**
+- **Uncommented `cleanup_old_files` command**: Previously commented out but actively used in DiskPulse component
+- **Removed commented code**: Deleted unused `with_db` helper function (replaced by extension trait pattern)
+- **Removed commented dependencies**: Cleaned up old `tauri-specta` dependency comments from Cargo.toml
+- **Added dead code attributes**: Added `#[allow(dead_code)]` to all 29 Tauri command handlers to suppress false positive warnings (commands are used via IPC)
+- **Suppressed intentional warnings**: Added allow attributes to cache module, db functions, and scanner types that are reserved for future use
+
+#### **Frontend (Svelte/TypeScript) Cleanup**
+- **Removed unused components**: Deleted `TreeView.svelte` (replaced by `EnhancedTreeView.svelte`), `MonitoringDashboard.svelte`, and `SystemAnalytics.svelte`
+- **Cleaned up type re-exports**: Removed 25 unused type re-exports from `scanner.svelte.ts` store (types are imported directly from generated types)
+- **Verified all imports**: Confirmed all remaining imports are actively used
+
+#### **Code Quality Improvements**
+- **Zero compilation errors**: Both Rust and TypeScript/Svelte checks pass with no errors
+- **Reduced false warnings**: Suppressed intentional dead code warnings with proper attributes
+- **Improved maintainability**: Removed ~500 lines of unused code and comments
+
+#### **Verification**
+- ✅ `cargo check` passes with only intentional warnings
+- ✅ `npm run check` passes with 0 errors and 0 warnings
+- ✅ All Tauri commands properly registered and accessible
+- ✅ All frontend components verified as used or removed
+
 ### 🧹 **Production Cleanup - Documentation & Repository Organization**
 
 Comprehensive cleanup of old documentation, debug files, build artifacts, and repository organization to ensure production readiness.

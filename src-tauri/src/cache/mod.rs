@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 
 /// Cache entry with TTL (Time To Live)
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 struct CacheEntry<T> {
     value: T,
     expires_at: Instant,
@@ -14,6 +15,7 @@ struct CacheEntry<T> {
 
 /// TTL-based cache for expensive operations
 #[derive(Clone)]
+#[allow(dead_code)]
 pub struct CacheManager {
     // Directory size cache: path -> (size, expires_at)
     dir_sizes: Arc<RwLock<HashMap<PathBuf, CacheEntry<u64>>>>,
@@ -26,6 +28,7 @@ pub struct CacheManager {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct ScanCacheEntry {
     pub total_size: u64,
     pub total_items: usize,
@@ -149,6 +152,7 @@ impl Default for CacheManager {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct CacheStats {
     pub dir_size_entries: usize,
     pub dir_size_expired: usize,

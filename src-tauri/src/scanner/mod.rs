@@ -25,6 +25,7 @@ pub enum ScannerError {
     #[error("Timeout exceeded")]
     Timeout,
     #[error("Operation cancelled")]
+    #[allow(dead_code)] // Reserved for future cancellation support
     Cancelled,
 }
 
@@ -34,6 +35,7 @@ pub struct ScanLimits {
     pub max_files: usize,
     pub max_depth: usize,
     pub max_memory_mb: usize,
+    #[allow(dead_code)] // Reserved for future timeout configuration
     pub timeout_seconds: u64,
 }
 
@@ -206,7 +208,10 @@ pub async fn scan_system_async(options: &ScanOptions) -> Result<ScanResults, Sca
             if let Err(e) = check_memory_limits(&scan_limits).await {
                 return Err(ScannerError::MemoryLimitExceeded(e.to_string()));
             }
-            last_memory_check = Instant::now();
+            #[allow(unused_assignments)]
+            {
+                last_memory_check = Instant::now();
+            }
         }
     }
 
@@ -327,7 +332,7 @@ async fn scan_caches_async(_limits: &ScanLimits) -> Result<Vec<ScanItem>, Scanne
 
 
 /// Async version of cache subdirectory scanning
-async fn scan_cache_subdirs_async(path: &Path, max_depth: usize) -> Result<Option<Vec<ScanItem>>, ScannerError> {
+async fn scan_cache_subdirs_async(path: &Path, _max_depth: usize) -> Result<Option<Vec<ScanItem>>, ScannerError> {
     let mut children = Vec::new();
 
     if let Ok(entries) = std::fs::read_dir(path) {

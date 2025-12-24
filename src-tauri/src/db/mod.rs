@@ -233,6 +233,7 @@ mod tests {
     }
 }
 
+#[allow(dead_code)]
 pub fn get_db_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
     let app_dir = app_handle
         .path()
@@ -245,6 +246,7 @@ pub fn get_db_path(app_handle: &AppHandle) -> Result<PathBuf, String> {
     Ok(app_dir.join("pulito.db"))
 }
 
+#[allow(dead_code)] // False positive - used via extension trait in main.rs
 pub fn initialize_database(app_handle: &AppHandle) -> Result<()> {
     let db_path = get_db_path(app_handle)
         .map_err(|e| rusqlite::Error::InvalidPath(std::path::PathBuf::from(e)))?;
