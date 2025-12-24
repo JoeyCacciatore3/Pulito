@@ -29,6 +29,28 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# Get latest version from GitHub API
+get_latest_version() {
+    local api_url="https://api.github.com/repos/JoeyCacciatore3/pulito/releases/latest"
+    local version
+    
+    log_info "Detecting latest version from GitHub..."
+    
+    # Try to fetch latest version with timeout
+    version=$(curl -s --max-time 5 --connect-timeout 3 "$api_url" 2>/dev/null | grep -oP '"tag_name":\s*"v?\K[^"]+' | head -1)
+    
+    if [[ -z "$version" ]]; then
+        log_warning "Could not detect latest version from GitHub API"
+        log_info "Using fallback version: 1.0.0"
+        echo "1.0.0"
+    else
+        # Remove 'v' prefix if present for consistency
+        version="${version#v}"
+        log_success "Detected latest version: $version"
+        echo "$version"
+    fi
+}
+
 # Check if running as root
 check_root() {
     if [[ $EUID -eq 0 ]]; then
@@ -143,6 +165,10 @@ install_dependencies() {
 install_package() {
     log_info "Downloading and installing Pulito..."
 
+    # Get latest version dynamically
+    PULITO_VERSION=$(get_latest_version)
+    log_info "Installing Pulito version: $PULITO_VERSION"
+
     # Create temp directory
     TMPDIR=$(mktemp -d)
     cd "$TMPDIR"
@@ -151,20 +177,20 @@ install_package() {
     case $DISTRO in
         ubuntu|debian|linuxmint|pop|zorin)
             PACKAGE_TYPE="deb"
-            PACKAGE_NAME="pulito_1.1.0_amd64.deb"
+            PACKAGE_NAME="pulito_${PULITO_VERSION}_amd64.deb"
             ;;
         fedora|centos|rhel|opensuse*)
             PACKAGE_TYPE="rpm"
-            PACKAGE_NAME="pulito-1.1.0-1.x86_64.rpm"
+            PACKAGE_NAME="pulito-${PULITO_VERSION}-1.x86_64.rpm"
             ;;
         *)
             # Default to AppImage for universal compatibility
             PACKAGE_TYPE="appimage"
-            PACKAGE_NAME="pulito_1.1.0.AppImage"
+            PACKAGE_NAME="pulito_${PULITO_VERSION}_amd64.AppImage"
             ;;
     esac
 
-    DOWNLOAD_URL="https://github.com/JoeyCacciatore3/pulito/releases/download/v1.1.0/${PACKAGE_NAME}"
+    DOWNLOAD_URL="https://github.com/JoeyCacciatore3/pulito/releases/download/v${PULITO_VERSION}/${PACKAGE_NAME}"
 
     log_info "Downloading $PACKAGE_NAME..."
     if ! curl -L -o "$PACKAGE_NAME" "$DOWNLOAD_URL"; then
@@ -176,7 +202,7 @@ install_package() {
     fi
 
     # Verify download (if checksums are available)
-    if curl -s -f "https://github.com/JoeyCacciatore3/pulito/releases/download/v1.1.0/checksums.txt" -o checksums.txt; then
+    if curl -s -f "https://github.com/JoeyCacciatore3/pulito/releases/download/v${PULITO_VERSION}/checksums.txt" -o checksums.txt; then
         log_info "Verifying download integrity..."
         if ! sha256sum -c checksums.txt --ignore-missing 2>/dev/null | grep -q "$PACKAGE_NAME: OK"; then
             log_warning "Checksum verification failed. Continuing anyway..."
@@ -189,8 +215,24 @@ install_package() {
     case $PACKAGE_TYPE in
         deb)
             log_info "Installing Debian package..."
+            
+            # Check if Pulito is already installed (for upgrade detection)
+            if dpkg -l | grep -q "^ii.*pulito"; then
+                INSTALLED_VERSION=$(dpkg -l | grep "^ii.*pulito" | awk '{print $3}')
+                log_info "Existing installation detected: version $INSTALLED_VERSION"
+                log_info "Upgrading to version $PULITO_VERSION..."
+            fi
+            
             sudo dpkg -i "$PACKAGE_NAME"
             sudo apt-get install -f  # Fix any missing dependencies
+            
+            # Verify installation/upgrade success
+            if dpkg -l | grep -q "^ii.*pulito"; then
+                NEW_VERSION=$(dpkg -l | grep "^ii.*pulito" | awk '{print $3}')
+                log_success "Pulito installed/upgraded successfully (version: $NEW_VERSION)"
+            else
+                log_warning "Installation completed but version verification failed"
+            fi
             ;;
         rpm)
             log_info "Installing RPM package..."
@@ -204,19 +246,30 @@ install_package() {
             ;;
         appimage)
             log_info "Installing AppImage..."
+            
+            # Remove old AppImage versions if they exist (upgrade handling)
+            if ls ~/Applications/pulito_*.AppImage 1> /dev/null 2>&1; then
+                log_info "Removing old AppImage version(s)..."
+                rm -f ~/Applications/pulito_*.AppImage
+                # Remove old desktop entry if it exists
+                rm -f ~/.local/share/applications/pulito.desktop
+                log_success "Old version removed"
+            fi
+            
             chmod +x "$PACKAGE_NAME"
             mkdir -p ~/Applications
-            mv "$PACKAGE_NAME" ~/Applications/
-            # Create desktop entry
+            mv "$PACKAGE_NAME" ~/Applications/pulito_${PULITO_VERSION}_amd64.AppImage
+            
+            # Create desktop entry with versioned filename
             cat > ~/.local/share/applications/pulito.desktop << EOF
 [Desktop Entry]
 Name=Pulito
-Exec=$HOME/Applications/$PACKAGE_NAME
+Exec=$HOME/Applications/pulito_${PULITO_VERSION}_amd64.AppImage
 Icon=pulito
 Type=Application
 Categories=Utility;System;
 EOF
-            log_info "AppImage installed to ~/Applications/"
+            log_info "AppImage installed to ~/Applications/pulito_${PULITO_VERSION}_amd64.AppImage"
             log_info "Desktop entry created"
             ;;
     esac
@@ -288,7 +341,8 @@ case "${1:-}" in
         exit 0
         ;;
     --version|-v)
-        echo "Pulito Installer v1.1.0"
+        INSTALLER_VERSION=$(get_latest_version)
+        echo "Pulito Installer (installing version: $INSTALLER_VERSION)"
         exit 0
         ;;
     --no-deps)

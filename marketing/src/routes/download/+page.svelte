@@ -5,6 +5,60 @@
 
 	let detectedOS = $state<string>('linux');
 	let showInstallScript = $state(false);
+	let latestVersion = $state<string>('1.0.0');
+	let packageFormats = $state<Array<{
+		name: string;
+		description: string;
+		icon: string;
+		installCommand: string;
+		downloadUrl: string;
+	}>>([]);
+
+	async function getLatestVersion() {
+		try {
+			const response = await fetch('https://api.github.com/repos/JoeyCacciatore3/pulito/releases/latest');
+			if (!response.ok) throw new Error('Failed to fetch version');
+			const data = await response.json();
+			const version = data.tag_name?.replace(/^v/, '') || '1.0.0';
+			return version;
+		} catch (error) {
+			logger.warn('Could not fetch latest version from GitHub API', { component: 'DownloadPage', action: 'get_latest_version' }, error);
+			return '1.0.0'; // Fallback
+		}
+	}
+
+	function updatePackageFormats(version: string) {
+		packageFormats = [
+			{
+				name: 'Debian Package (.deb)',
+				description: 'Recommended for Ubuntu, Debian, and derivatives',
+				icon: '📦',
+				installCommand: 'sudo dpkg -i pulito_*.deb',
+				downloadUrl: `https://github.com/JoeyCacciatore3/pulito/releases/download/v${version}/pulito_${version}_amd64.deb`
+			},
+			{
+				name: 'AppImage',
+				description: 'Universal Linux package, no installation needed',
+				icon: '📱',
+				installCommand: 'chmod +x pulito_*.AppImage && ./pulito_*.AppImage',
+				downloadUrl: `https://github.com/JoeyCacciatore3/pulito/releases/download/v${version}/pulito_${version}_amd64.AppImage`
+			},
+			{
+				name: 'Snap',
+				description: 'Available on Snap Store (coming soon)',
+				icon: '🎯',
+				installCommand: 'sudo snap install pulito',
+				downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases'
+			},
+			{
+				name: 'Flatpak',
+				description: 'Available on Flathub (coming soon)',
+				icon: '📦',
+				installCommand: 'flatpak install flathub com.pulito.app',
+				downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases'
+			}
+		];
+	}
 
 	function copyInstallScript() {
 		const command = 'curl -fsSL https://raw.githubusercontent.com/JoeyCacciatore3/pulito/main/static/install.sh | bash';
@@ -16,7 +70,7 @@
 		});
 	}
 
-	onMount(() => {
+	onMount(async () => {
 		if (browser) {
 			// Detect operating system
 			const userAgent = navigator.userAgent.toLowerCase();
@@ -25,39 +79,13 @@
 			} else {
 				detectedOS = 'other';
 			}
+
+			// Fetch latest version and update package formats
+			const version = await getLatestVersion();
+			latestVersion = version;
+			updatePackageFormats(version);
 		}
 	});
-
-	const packageFormats = [
-		{
-			name: 'Debian Package (.deb)',
-			description: 'Recommended for Ubuntu, Debian, and derivatives',
-			icon: '📦',
-			installCommand: 'sudo dpkg -i pulito_*.deb',
-			downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases/latest/download/pulito_1.0.0_amd64.deb'
-		},
-		{
-			name: 'AppImage',
-			description: 'Universal Linux package, no installation needed',
-			icon: '📱',
-			installCommand: 'chmod +x pulito_*.AppImage && ./pulito_*.AppImage',
-			downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases/latest/download/pulito_1.0.0_amd64.AppImage'
-		},
-		{
-			name: 'Snap',
-			description: 'Available on Snap Store (coming soon)',
-			icon: '🎯',
-			installCommand: 'sudo snap install pulito',
-			downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases'
-		},
-		{
-			name: 'Flatpak',
-			description: 'Available on Flathub (coming soon)',
-			icon: '📦',
-			installCommand: 'flatpak install flathub com.pulito.app',
-			downloadUrl: 'https://github.com/JoeyCacciatore3/pulito/releases'
-		}
-	];
 </script>
 
 <svelte:head>
@@ -190,7 +218,7 @@
 					</svg>
 				</div>
 				<div class="flex-1">
-					<h2 class="text-xl font-bold mb-2 text-[var(--color-text)]">Latest Release: v1.0.0</h2>
+					<h2 class="text-xl font-bold mb-2 text-[var(--color-text)]">Latest Release: v{latestVersion}</h2>
 					<p class="text-[var(--color-text-secondary)] mb-3">
 						Complete system optimization suite with advanced safety features and modern UI.
 					</p>

@@ -1,7 +1,28 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { browser } from '$app/environment';
 
 	let mobileMenuOpen = $state(false);
+	let latestVersion = $state<string>('1.0.0');
+
+	async function getLatestVersion() {
+		if (!browser) return '1.0.0';
+		try {
+			const response = await fetch('https://api.github.com/repos/JoeyCacciatore3/pulito/releases/latest');
+			if (!response.ok) throw new Error('Failed to fetch version');
+			const data = await response.json();
+			return data.tag_name?.replace(/^v/, '') || '1.0.0';
+		} catch (error) {
+			return '1.0.0'; // Fallback
+		}
+	}
+
+	onMount(async () => {
+		if (browser) {
+			latestVersion = await getLatestVersion();
+		}
+	});
 
 	function toggleMobileMenu() {
 		mobileMenuOpen = !mobileMenuOpen;
@@ -44,8 +65,8 @@
 		"license": "https://opensource.org/licenses/MIT",
 		"codeRepository": "https://github.com/JoeyCacciatore3/pulito",
 		"downloadUrl": "https://github.com/JoeyCacciatore3/pulito/releases",
-		"softwareVersion": "1.0.0",
-		"releaseNotes": "Initial production release"
+		"softwareVersion": "{latestVersion}",
+		"releaseNotes": "Latest stable release"
 	}
 	</script>
 </svelte:head>

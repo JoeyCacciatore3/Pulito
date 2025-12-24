@@ -158,19 +158,27 @@ sudo apt install -y \
 Download the latest `.deb` or `.AppImage` from the [Releases](https://github.com/JoeyCacciatore3/pulito/releases) page.
 
 ```bash
-# For .deb
-sudo dpkg -i pulito_1.1.0_amd64.deb
+# For .deb (download latest from releases page)
+sudo dpkg -i pulito_*.deb
 
-# For AppImage
-chmod +x pulito_1.1.0_amd64.AppImage
-./pulito_1.1.0_amd64.AppImage
+# For AppImage (download latest from releases page)
+chmod +x pulito_*_amd64.AppImage
+./pulito_*_amd64.AppImage
 ```
+
+**Upgrading:** Simply install the new package - it will automatically replace the previous version. For AppImage, replace the old file with the new one.
 
 ### Quick Install Script
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/JoeyCacciatore3/pulito/main/static/install.sh | bash
 ```
+
+The install script automatically:
+- Detects the latest version from GitHub
+- Downloads and installs the appropriate package for your distribution
+- Handles upgrades by removing old AppImage versions
+- Upgrades .deb packages seamlessly
 
 ### From Source
 
