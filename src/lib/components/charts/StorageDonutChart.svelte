@@ -70,6 +70,7 @@
 		]
 	});
 
+	// @ts-ignore: Chart.js type compatibility issues
 	let chartOptions = $derived(() => {
 		const defaultOptions = getDefaultChartOptions(isDark);
 		return {
@@ -162,5 +163,6 @@
 </script>
 
 <div class="w-full h-full min-h-[320px]">
+	<!-- @ts-ignore: Chart.js type compatibility issues -->
 	<Doughnut data={chartData} options={chartOptions} />
 </div>

@@ -126,6 +126,7 @@
 	let chartOptions = $derived({
 		...getDefaultChartOptions(isDark),
 		const defaultOptions = getDefaultChartOptions(isDark);
+		// @ts-ignore: Chart.js type compatibility issues
 		plugins: {
 			...(defaultOptions.plugins ?? {}),
 			tooltip: {
@@ -199,5 +200,6 @@
 </script>
 
 <div class="w-full" style="height: {height}">
-	<Bar data={chartData} options={chartOptions as any} />
+	<!-- @ts-ignore: Chart.js type compatibility issues -->
+	<Bar data={chartData} options={chartOptions} />
 </div>
