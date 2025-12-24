@@ -160,6 +160,11 @@
 					...(defaultOptions.scales?.y?.ticks ?? {}),
 					callback: (value: number) => formatBytesForChart(value)
 				}
+			}
+		}
+		};
+	});
+				}
 			},
 			...(showIOPS ? {
 				y1: {

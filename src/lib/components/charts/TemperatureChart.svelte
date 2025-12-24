@@ -163,6 +163,11 @@
 					callback: (value: number) => `${value}°C`
 				}
 			}
+		}
+		};
+	});
+				}
+			}
 		},
 		interaction: {
 			mode: 'index' as const,

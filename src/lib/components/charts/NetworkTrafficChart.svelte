@@ -114,6 +114,11 @@
 					callback: (value: number) => formatBytesForChart(value)
 				}
 			}
+		}
+		};
+	});
+				}
+			}
 		},
 		interaction: {
 			mode: 'index' as const,
