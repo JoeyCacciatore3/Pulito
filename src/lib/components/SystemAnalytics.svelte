@@ -4,6 +4,15 @@
 	import { invoke, formatBytes } from '$lib/utils/tauri';
 	import { notificationStore } from '$lib/stores/notifications.svelte';
 	import { logger } from '$lib/utils/logger';
+	import type {
+		SystemHealthData,
+		NetworkInterfaceInfo,
+		NetworkConnection,
+		Temperatures,
+		BatteryInfo,
+		ProcessInfo,
+		LoadAverage
+	} from '$lib/generated/types';
 	import LoadingSpinner from './ui/LoadingSpinner.svelte';
 	import ProgressBar from './ui/ProgressBar.svelte';
 	import CPUUsageChart from './charts/CPUUsageChart.svelte';
@@ -44,17 +53,17 @@
 			usage: number;
 			memory_used: number;
 			memory_total: number;
-			temperature: number;
+			temperature?: number;
 		};
 
 		// Network
 		network_up: number;
 		network_down: number;
-		active_connections: Array<{
-			local_address: string;
-			remote_address: string;
-			status: string;
-		}>;
+		network_interfaces: NetworkInterfaceInfo[];
+		active_connections: NetworkConnection[];
+
+		// Temperatures
+		temperatures: Temperatures;
 
 		// Disk I/O
 		disk_read_bytes: number;
@@ -62,158 +71,18 @@
 		disk_read_ops: number;
 		disk_write_ops: number;
 
-		// Temperatures
-		temperatures: {
-			cpu: number;
-			system: number;
-			gpu?: number;
-		};
+		// Battery (optional)
+		battery_info?: BatteryInfo;
 
 		// Processes
-		top_processes: Array<{
-			name: string;
-			pid: number;
-			cpu_usage: number;
-			memory_usage: number;
-		}>;
+		top_processes: ProcessInfo[];
 
 		// System load averages
-		load_average?: {
-			one_minute: number;
-			five_minutes: number;
-			fifteen_minutes: number;
-		};
+		load_average?: LoadAverage;
+
+		// Timestamp
+		timestamp: number;
 	}
-
-	let metrics = $state<SystemMetrics | null>(null);
-	let loading = $state(true);
-	let realTimeMode = $state(false);
-	let updateInterval = $state<NodeJS.Timeout | null>(null);
-	let timeRange = $state<'1h' | '6h' | '24h' | 'all'>('all');
-
-	async function loadSystemMetrics() {
-		try {
-			const data = await invoke<SystemMetrics>('get_system_health', undefined, 10000);
-			metrics = data;
-
-			// Store metrics in history
-			if (data) {
-				addCPUData({
-					usage: data.cpu_usage,
-					coreUsages: data.core_usages
-				});
-
-				addMemoryData({
-					usedMemory: data.used_memory,
-					totalMemory: data.total_memory,
-					swapUsed: data.swap_used,
-					swapTotal: data.swap_total
-				});
-
-				addNetworkData({
-					upload: data.network_up,
-					download: data.network_down
-				});
-
-				addTemperatureData({
-					cpu: data.temperatures.cpu,
-					gpu: data.temperatures.gpu,
-					system: data.temperatures.system
-				});
-
-				addDiskIOData({
-					readBytes: data.disk_read_bytes,
-					writeBytes: data.disk_write_bytes,
-					readOps: data.disk_read_ops,
-					writeOps: data.disk_write_ops
-				});
-			}
-		} catch (e) {
-			console.error('SystemAnalytics: Error loading metrics:', e);
-			logger.error('Failed to load system metrics', { component: 'SystemAnalytics' }, e);
-			notificationStore.error('Failed to Load Metrics', 'Could not retrieve system metrics. Please check system permissions and try again.');
-			metrics = null;
-		} finally {
-			loading = false;
-		}
-	}
-
-	function toggleRealTimeMode() {
-		realTimeMode = !realTimeMode;
-
-		if (realTimeMode) {
-			// Start real-time updates every 2 seconds
-			updateInterval = setInterval(loadSystemMetrics, 2000);
-			notificationStore.info('Real-Time Mode', 'System monitoring activated');
-		} else {
-			// Stop real-time updates
-			if (updateInterval) {
-				clearInterval(updateInterval);
-				updateInterval = null;
-			}
-			notificationStore.info('Real-Time Mode', 'System monitoring deactivated');
-		}
-	}
-
-	function getHealthScore(): { score: number; status: string; color: string } {
-		if (!metrics) return { score: 0, status: 'Unknown', color: 'gray' };
-
-		let score = 100;
-
-		// CPU health
-		if (metrics.cpu_usage > 80) score -= 20;
-		else if (metrics.cpu_usage > 60) score -= 10;
-
-		// Memory health
-		const memoryPercent = (metrics.used_memory / metrics.total_memory) * 100;
-		if (memoryPercent > 90) score -= 25;
-		else if (memoryPercent > 75) score -= 15;
-
-		// Temperature health
-		if (metrics.temperatures.cpu > 80) score -= 15;
-		else if (metrics.temperatures.cpu > 70) score -= 5;
-
-		let status: string;
-		let color: string;
-
-		if (score >= 90) {
-			status = 'Excellent';
-			color = 'green';
-		} else if (score >= 75) {
-			status = 'Good';
-			color = 'blue';
-		} else if (score >= 60) {
-			status = 'Fair';
-			color = 'yellow';
-		} else if (score >= 40) {
-			status = 'Poor';
-			color = 'orange';
-		} else {
-			status = 'Critical';
-			color = 'red';
-		}
-
-		return { score, status, color };
-	}
-
-	function getMetricColor(value: number, thresholds: { good: number; warning: number; critical: number }): string {
-		if (value >= thresholds.critical) return 'text-red-600';
-		if (value >= thresholds.warning) return 'text-yellow-600';
-		return 'text-green-600';
-	}
-
-	onMount(() => {
-		loadSystemMetrics();
-	});
-
-	// Cleanup on unmount
-	$effect(() => {
-		return () => {
-			if (updateInterval) {
-				clearInterval(updateInterval);
-			}
-		};
-	});
 </script>
 
 <div class="space-y-6">
@@ -424,8 +293,8 @@
 
 						<div class="flex justify-between items-center">
 							<span class="text-sm">Temp</span>
-							<span class="font-medium {getMetricColor(metrics.gpu_info.temperature, {good: 60, warning: 75, critical: 85})}">
-								{metrics.gpu_info.temperature.toFixed(0)}°C
+							<span class="font-medium {getMetricColor(metrics.gpu_info?.temperature ?? 0, {good: 60, warning: 75, critical: 85})}">
+								{metrics.gpu_info?.temperature?.toFixed(0) ?? 'N/A'}°C
 							</span>
 						</div>
 

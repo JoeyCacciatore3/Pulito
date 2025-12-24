@@ -342,6 +342,7 @@
 					data={[60, 30, 10]}
 					height={200}
 				/>
+			</div>
 			<div class="card p-6 flex flex-col items-center justify-center">
 				<h2 class="font-semibold mb-4">System Health</h2>
 				<PerformanceGauge value={healthScore} size={180} />
@@ -368,6 +369,6 @@
 				<SparklineChart data={memoryHistory.length > 0 ? memoryHistory : [0]} color="rgb(16, 185, 129)" height={40} />
 			</div>
 		</div>
-
+		</div>
 	{/if}
 </div>
