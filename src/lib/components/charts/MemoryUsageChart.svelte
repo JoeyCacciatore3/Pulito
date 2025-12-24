@@ -110,7 +110,6 @@
 	let chartOptions = $derived(() => {
 		const defaultOptions = getDefaultChartOptions(isDark);
 		return {
-		return {
 		const defaultOptions = getDefaultChartOptions(isDark);
 		plugins: {
 			...(defaultOptions.plugins ?? {}),
