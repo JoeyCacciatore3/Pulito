@@ -1,5 +1,4 @@
 <script lang="ts">
-<!-- svelte-ignore ts-check -->
 	/* eslint-disable @typescript-eslint/no-explicit-any */
 	import { onMount } from 'svelte';
 	import { Bar } from 'svelte5-chartjs';

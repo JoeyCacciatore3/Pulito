@@ -1,4 +1,3 @@
-<!-- svelte-ignore ts-check -->
 <script lang="ts">
 	/* eslint-disable @typescript-eslint/no-explicit-any */
 	import { onMount } from 'svelte';
