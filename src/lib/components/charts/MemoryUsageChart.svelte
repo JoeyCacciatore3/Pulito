@@ -107,10 +107,7 @@
 		? Math.max(...filteredData.map(d => d.totalMemory + (d.swapTotal || 0))) * 1.1
 		: 100);
 
-	let chartOptions = $derived(() => {
-		const defaultOptions = getDefaultChartOptions(isDark);
-		return {
-		const defaultOptions = getDefaultChartOptions(isDark);
+		const defaultOptions = getDefaultChartOptions(isDark);\t	return {
 		plugins: {
 			...(defaultOptions.plugins ?? {}),
 			tooltip: {
