@@ -1,6 +1,4 @@
 <script lang="ts">
-	// Default export for the component
-</script>
 	import { onMount } from 'svelte';
 	import { invoke, formatBytes } from '$lib/utils/tauri';
 	import { navigation } from '$lib/stores/navigation.svelte';
