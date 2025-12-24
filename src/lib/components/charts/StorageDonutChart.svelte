@@ -2,8 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Doughnut } from 'svelte5-chartjs';
 	import { Chart, ArcElement, Tooltip, Legend } from 'chart.js';
-	import { getDefaultChartOptions, getStorageColors, formatBytesForChart, transparentize, theme } from '$lib/utils/charts';
-	import { formatBytes } from '$lib/utils/tauri';
+	import { getDefaultChartOptions, getStorageColors, formatBytesForChart, transparentize } from '$lib/utils/charts';
 
 	// Register Chart.js components
 	Chart.register(ArcElement, Tooltip, Legend);
@@ -14,7 +13,7 @@
 		cacheSize: number;
 		orphanPackagesSize?: number;
 		cleanableSpace: number;
-		onSegmentClick?: (segment: string) => void;
+		onSegmentClick?: (_segment: string) => void;
 	}
 
 	let {

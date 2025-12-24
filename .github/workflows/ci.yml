@@ -49,6 +49,9 @@ jobs:
       - name: Install Node.js dependencies
         run: npm ci
 
+      - name: Generate SvelteKit types
+        run: npm run check -- --skip
+
       - name: Run linting
         run: npm run lint
 

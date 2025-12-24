@@ -90,7 +90,8 @@ export default [
 			'.svelte-kit/',
 			'vitest.config.ts',
 			'html/',
-			'coverage/'
+			'coverage/',
+			'src/lib/generated/**'
 		]
 	}
 ];

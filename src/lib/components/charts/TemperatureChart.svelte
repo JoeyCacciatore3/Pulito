@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Line } from 'svelte5-chartjs';
 	import { Chart, registerables } from 'chart.js';
-	import { getDefaultChartOptions, getThemeColors, formatTimeForChart, formatDateForChart, getTemperatureColor, transparentize } from '$lib/utils/charts';
+	import { getDefaultChartOptions, formatTimeForChart, formatDateForChart, getTemperatureColor, transparentize } from '$lib/utils/charts';
 
 	Chart.register(...registerables);
 
@@ -58,7 +58,6 @@
 
 	// Build datasets
 	let datasets = $derived((() => {
-		const colors = getThemeColors(isDark);
 		const datasets: any[] = [];
 
 		// CPU Temperature

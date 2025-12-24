@@ -153,7 +153,6 @@ export function getStorageColors(isDark: boolean = false) {
  * CPU core colors (for multi-core visualization)
  */
 export function getCPUCoreColors(coreCount: number, isDark: boolean = false): string[] {
-	const colors = getThemeColors(isDark);
 	const baseHue = 200; // Blue base
 	const colorsArray: string[] = [];
 

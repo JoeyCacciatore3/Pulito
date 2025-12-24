@@ -28,7 +28,7 @@
 	let chartColor = $derived(color || getThemeColors(isDark).primary);
 
 	let chartData = $derived({
-		labels: data.map((_, i) => ''),
+		labels: data.map(() => ''),
 		datasets: [
 			{
 				data: data,

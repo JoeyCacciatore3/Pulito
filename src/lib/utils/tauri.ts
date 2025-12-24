@@ -12,8 +12,8 @@ interface IPCRequest {
 	cmd: string;
 	args: any;
 	options: IPCOptions;
-	resolve: (value: any) => void;
-	reject: (error: any) => void;
+	resolve: (_value: any) => void;
+	reject: (_error: any) => void;
 	timestamp: number;
 	attempts: number;
 }
@@ -23,7 +23,7 @@ interface IPCOptions {
 	priority?: 'low' | 'normal' | 'high';
 	retry?: boolean;
 	batchable?: boolean;
-	onProgress?: (progress: number) => void;
+	onProgress?: (_progress: number) => void;
 }
 
 class IPCManager {
@@ -150,7 +150,7 @@ class IPCManager {
 	/**
 	 * Handle request errors with retry logic
 	 */
-	private async handleRequestError(request: IPCRequest, error: any, reject: (error: any) => void) {
+	private async handleRequestError(request: IPCRequest, error: any, reject: (_error: any) => void) {
 		request.attempts++;
 		const shouldRetry = request.options.retry !== false &&
 						   request.attempts < this.maxRetries &&

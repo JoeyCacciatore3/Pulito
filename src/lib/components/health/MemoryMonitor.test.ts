@@ -35,7 +35,7 @@ describe('MemoryMonitor', () => {
 	it('renders progress bar with correct percentage', () => {
 		const { container } = render(MemoryMonitor, { props: mockProps });
 		// The progress bar should exist and have the correct percentage
-		const progressBar = container.querySelector('[role="progressbar"]') ||
+		const progressBar = container.querySelector('[role="progressbar"]') ??
 		                   container.querySelector('.bg-primary-500');
 		expect(progressBar).toBeInTheDocument();
 	});

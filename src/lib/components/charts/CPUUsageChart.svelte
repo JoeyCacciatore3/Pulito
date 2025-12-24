@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import { Line } from 'svelte5-chartjs';
 	import { Chart, registerables } from 'chart.js';
-	import { getDefaultChartOptions, getCPUCoreColors, formatPercentForChart, formatTimeForChart, formatDateForChart, transparentize, theme } from '$lib/utils/charts';
+	import { getDefaultChartOptions, getCPUCoreColors, formatPercentForChart, formatTimeForChart, formatDateForChart, transparentize } from '$lib/utils/charts';
 
 	Chart.register(...registerables);
 
