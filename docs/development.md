@@ -59,7 +59,7 @@ Terminal 2 (Backend only):
 cd src-tauri && cargo watch -x 'build' -x 'run'
 ```
 
-Then manually open `http://localhost:5173/app` in browser.
+Then manually open `http://localhost:5174/app` in browser.
 
 **Note**: Using separate frontend/backend (`npm run dev`) will result in "Tauri API unavailable" errors because the browser cannot access the Tauri backend. This approach is only for frontend-only UI development. `tauri:dev` is recommended as it handles everything automatically and provides full functionality.
 
