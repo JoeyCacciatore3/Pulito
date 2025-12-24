@@ -1,88 +1,51 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-
-	import { invoke, formatBytes } from '$lib/utils/tauri';
-	import { notificationStore } from '$lib/stores/notifications.svelte';
-	import { logger } from '$lib/utils/logger';
-	import type {
-		SystemHealthData,
-		NetworkInterfaceInfo,
-		NetworkConnection,
-		Temperatures,
-		BatteryInfo,
-		ProcessInfo,
-		LoadAverage
-	} from '$lib/generated/types';
-	import LoadingSpinner from './ui/LoadingSpinner.svelte';
-	import ProgressBar from './ui/ProgressBar.svelte';
 	import CPUUsageChart from './charts/CPUUsageChart.svelte';
 	import MemoryUsageChart from './charts/MemoryUsageChart.svelte';
 	import NetworkTrafficChart from './charts/NetworkTrafficChart.svelte';
 	import DiskIOChart from './charts/DiskIOChart.svelte';
 	import TemperatureChart from './charts/TemperatureChart.svelte';
-	import {
-		addCPUData,
-		addMemoryData,
-		addNetworkData,
-		addTemperatureData,
-		addDiskIOData,
-		getCPUHistory,
-		getMemoryHistory,
-		getNetworkHistory,
-		getTemperatureHistory,
-		getDiskIOHistory
-	} from '$lib/stores/metrics-history.svelte';
 
-	interface SystemMetrics {
-		// CPU
-		cpu_usage: number;
-		cpu_cores: number;
-		cpu_frequency: number;
-		core_usages: number[];
+	// Placeholder data until real implementation is added
+	let loading = $state(false);
+	let realTimeMode = $state(false);
+	let metrics = $state({
+		cpu_usage: 45,
+		cpu_cores: 8,
+		temperatures: { cpu: 65, system: 45, gpu: undefined },
+		used_memory: 8_000_000_000, // 8GB
+		total_memory: 16_000_000_000, // 16GB
+		swap_used: 1_000_000_000, // 1GB
+		swap_total: 2_000_000_000, // 2GB
+		network_up: 50_000_000, // 50MB
+		network_down: 100_000_000, // 100MB
+		disk_read_bytes: 100_000_000, // 100MB
+		disk_write_bytes: 200_000_000, // 200MB
+		gpu_info: undefined,
+		top_processes: [],
+		load_average: undefined
+	});
 
-		// Memory
-		total_memory: number;
-		used_memory: number;
-		available_memory: number;
-		swap_total: number;
-		swap_used: number;
-
-		// GPU
-		gpu_info?: {
-			name: string;
-			usage: number;
-			memory_used: number;
-			memory_total: number;
-			temperature?: number;
-		};
-
-		// Network
-		network_up: number;
-		network_down: number;
-		network_interfaces: NetworkInterfaceInfo[];
-		active_connections: NetworkConnection[];
-
-		// Temperatures
-		temperatures: Temperatures;
-
-		// Disk I/O
-		disk_read_bytes: number;
-		disk_write_bytes: number;
-		disk_read_ops: number;
-		disk_write_ops: number;
-
-		// Battery (optional)
-		battery_info?: BatteryInfo;
-
-		// Processes
-		top_processes: ProcessInfo[];
-
-		// System load averages
-		load_average?: LoadAverage;
-
-		// Timestamp
-		timestamp: number;
+	function formatBytes(bytes: number): string {
+		const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+		let size = bytes;
+		let unitIndex = 0;
+		while (size >= 1024 && unitIndex < units.length - 1) {
+			size /= 1024;
+			unitIndex++;
+		}
+		return `${size.toFixed(1)} ${units[unitIndex]}`;
 	}
+
+	function getHealthScore(): { score: number; status: string; color: string } {
+		return { score: 85, status: 'Good', color: 'green' };
+	}
+
+	function getMetricColor(value: number, thresholds: { good: number; warning: number; critical: number }): string {
+		if (value >= thresholds.critical) return 'text-red-600';
+		if (value >= thresholds.warning) return 'text-yellow-600';
+		return 'text-green-600';
+	}
+
 </script>
 
 <div class="space-y-6">
@@ -91,48 +54,6 @@
 		<div>
 			<h1 class="text-2xl font-bold mb-1">System Analytics</h1>
 			<p class="text-muted">Real-time system monitoring and performance insights</p>
-		</div>
-		<div class="flex gap-2 items-center">
-			<!-- Time Range Selector -->
-			<div class="flex gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-				<button
-					class="px-3 py-1 text-sm rounded {timeRange === '1h' ? 'bg-white dark:bg-gray-700 font-medium' : ''}"
-					onclick={() => timeRange = '1h'}
-				>
-					1h
-				</button>
-				<button
-					class="px-3 py-1 text-sm rounded {timeRange === '6h' ? 'bg-white dark:bg-gray-700 font-medium' : ''}"
-					onclick={() => timeRange = '6h'}
-				>
-					6h
-				</button>
-				<button
-					class="px-3 py-1 text-sm rounded {timeRange === '24h' ? 'bg-white dark:bg-gray-700 font-medium' : ''}"
-					onclick={() => timeRange = '24h'}
-				>
-					24h
-				</button>
-				<button
-					class="px-3 py-1 text-sm rounded {timeRange === 'all' ? 'bg-white dark:bg-gray-700 font-medium' : ''}"
-					onclick={() => timeRange = 'all'}
-				>
-					All
-				</button>
-			</div>
-			<button
-				class="btn {realTimeMode ? 'btn-primary' : 'btn-secondary'}"
-				onclick={toggleRealTimeMode}
-			>
-				{#if realTimeMode}
-					⏹️ Stop Live
-				{:else}
-					▶️ Live Monitor
-				{/if}
-			</button>
-			<button class="btn btn-secondary" onclick={loadSystemMetrics} disabled={loading}>
-				🔄 Refresh
-			</button>
 		</div>
 	</div>
 
