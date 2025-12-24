@@ -16,7 +16,7 @@
 		data: DataPoint[];
 		timeRange?: '1h' | '6h' | '24h' | 'all';
 		height?: string;
-	});
+	}
 
 	let { data = [], timeRange = 'all', height = '300px' }: Props = $props();
 
