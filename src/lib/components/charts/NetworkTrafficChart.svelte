@@ -1,128 +1,73 @@
 <script lang="ts">
-	/* eslint-disable @typescript-eslint/no-explicit-any */
 	import { onMount } from 'svelte';
 	import { Line } from 'svelte5-chartjs';
 	import { Chart, registerables } from 'chart.js';
-	import { getDefaultChartOptions, getThemeColors, formatBytesForChart, formatTimeForChart, formatDateForChart, transparentize } from '$lib/utils/charts';
+	import { getThemeColors, transparentize } from '$lib/utils/charts';
 
 	Chart.register(...registerables);
 
-	interface DataPoint {
-		timestamp: number;
-		upload: number;
-		download: number;
-	}
-
 	interface Props {
-		data: DataPoint[];
-		timeRange?: '1h' | '6h' | '24h' | 'all';
-		height?: string;
+		data: number[];
+		color?: string;
+		height?: number;
+		width?: string;
 	}
 
-	let { data = [], timeRange = 'all', height = '300px' }: Props = $props();
+	let {
+		data = [],
+		color,
+		height = 40,
+		width = '100%'
+	}: Props = $props();
 
 	let isDark = $derived(
 		typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
 	);
 
-	// Filter data by time range
-	let filteredData = $derived(timeRange === 'all'
-		? data
-		: data.filter(point => {
-			const now = Date.now();
-			const ranges = {
-				'1h': 60 * 60 * 1000,
-				'6h': 6 * 60 * 60 * 1000,
-				'24h': 24 * 60 * 60 * 1000,
-			};
-			return point.timestamp >= (now - ranges[timeRange]);
-		}));
-
-	// Format labels
-	let labels = $derived(filteredData.map(point => {
-		if (timeRange === '1h' || timeRange === '6h') {
-			return formatTimeForChart(point.timestamp);
-		}
-		return formatDateForChart(point.timestamp);
-	}));
-
-	// Build datasets
-	let datasets = $derived((() => {
-		const colors = getThemeColors(isDark);
-
-		return [
-			{
-				label: 'Upload',
-				data: filteredData.map(d => d.upload),
-				borderColor: colors.danger,
-				backgroundColor: transparentize(colors.danger, 0.1),
-				fill: true,
-				tension: 0.4,
-				pointRadius: 0,
-				borderWidth: 2,
-				yAxisID: 'y'
-			},
-			{
-				label: 'Download',
-				data: filteredData.map(d => d.download),
-				borderColor: colors.secondary,
-				backgroundColor: transparentize(colors.secondary, 0.1),
-				fill: true,
-				tension: 0.4,
-				pointRadius: 0,
-				borderWidth: 2,
-				yAxisID: 'y'
-			}
-		];
-	})());
+	// Use provided color or theme default
+	let chartColor = $derived(color || getThemeColors(isDark).primary);
 
 	let chartData = $derived({
-		labels,
-		datasets
+		labels: data.map(() => ''),
+		datasets: [
+			{
+				data: data,
+				borderColor: chartColor,
+				backgroundColor: transparentize(chartColor, 0.1),
+				fill: true,
+				tension: 0.4,
+				pointRadius: 0,
+				borderWidth: 2
+			}
+		]
 	});
 
-	// Calculate max value for Y axis
-	let maxValue = $derived(filteredData.length > 0
-		? Math.max(...filteredData.map(d => Math.max(d.upload, d.download))) * 1.1
-		: 1000);
-
 	let chartOptions = $derived({
-		...getDefaultChartOptions(isDark),
-		// @ts-ignore: Chart.js type compatibility issues
-		const defaultOptions = getDefaultChartOptions(isDark);
+		responsive: true,
+		maintainAspectRatio: false,
 		plugins: {
-			...(defaultOptions.plugins ?? {}),
+			legend: {
+				display: false
+			},
 			tooltip: {
-				...(defaultOptions.plugins?.tooltip ?? {}),
-				mode: 'index' as const,
-				intersect: false,
-				callbacks: {
-					label: (context: any) => {
-						return `${context.dataset.label}: ${formatBytesForChart(context.parsed.y)}`;
-					}
-				}
+				enabled: false
 			}
 		},
 		scales: {
-			...(defaultOptions.scales ?? {}),
+			x: {
+				display: false
+			},
 			y: {
-				...(defaultOptions.scales?.y ?? {}),
-				beginAtZero: true,
-				max: maxValue,
-				ticks: {
-					...(defaultOptions.scales?.y?.ticks ?? {}),
-					callback: (value: number) => formatBytesForChart(value)
-				}
-			}
-		}
-		};
-	});
-				}
+				display: false
 			}
 		},
-		interaction: {
-			mode: 'index' as const,
-			intersect: false
+		elements: {
+			point: {
+				radius: 0
+			}
+		},
+		animation: {
+			duration: 0 // Disable animation for network-traffics (they update frequently)
 		}
 	});
 
@@ -143,7 +88,6 @@
 	});
 </script>
 
-<div class="w-full" style="height: {height}">
-	<!-- @ts-ignore: Chart.js type compatibility issues -->
+<div class="w-full" style="height: {height}px; width: {width}">
 	<Line data={chartData} options={chartOptions} />
 </div>
