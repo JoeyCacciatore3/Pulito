@@ -319,7 +319,7 @@
 					</div>
 				</div>
 				<CPUUsageChart
-					data={[50, 60, 55, 70, 65]} <!-- Placeholder data -->
+					data={[50, 60, 55, 70, 65]}
 					height={120}
 				/>
 			</div>
@@ -336,7 +336,7 @@
 					</div>
 				</div>
 				<MemoryUsageChart
-					data={[40, 45, 50, 48, 52]} <!-- Placeholder data -->
+					data={[40, 45, 50, 48, 52]}
 					height={120}
 				/>
 			</div>
@@ -352,7 +352,7 @@
 					</div>
 				</div>
 				<NetworkTrafficChart
-					data={[100, 120, 90, 150, 110]} <!-- Placeholder data -->
+					data={[100, 120, 90, 150, 110]}
 					height={120}
 				/>
 			</div>
@@ -368,7 +368,7 @@
 					</div>
 				</div>
 				<DiskIOChart
-					data={[200, 180, 220, 190, 210]} <!-- Placeholder data -->
+					data={[200, 180, 220, 190, 210]}
 					height={120}
 				/>
 			</div>
@@ -382,7 +382,7 @@
 					</div>
 				</div>
 				<TemperatureChart
-					data={[45, 50, 48, 52, 47]} <!-- Placeholder data -->
+					data={[45, 50, 48, 52, 47]}
 					height={120}
 				/>
 			</div>
