@@ -1,19 +1,16 @@
 <script lang="ts">
-	import { invoke, formatBytes } from '$lib/utils/tauri';
+	import { formatBytes } from '$lib/utils/tauri';
 	import { notificationStore } from '$lib/stores/notifications.svelte';
-	import { logger } from '$lib/utils/logger';
 	import type { CleanupPreview, PreviewItem } from '$lib/generated/types';
-	import LoadingSpinner from './ui/LoadingSpinner.svelte';
 
 	let {
 		preview = $bindable(),
 		onConfirm = $bindable()
 	} = $props<{
 		preview: CleanupPreview | null;
-		onConfirm: (selectedItems: PreviewItem[]) => Promise<void>;
+		onConfirm: (_selectedItems: PreviewItem[]) => Promise<void>;
 	}>();
 
-	let loading = $state(false);
 	let selectedItems = $state<Set<string>>(new Set());
 	let expandedCategories = $state<Set<string>>(new Set(['cache', 'filesystem']));
 

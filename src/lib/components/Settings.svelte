@@ -308,7 +308,6 @@
 							class="input w-full"
 							value={settings.value.scheduling?.frequency || 'daily'}
 							onchange={(e) => {
-								const current = settings.value.scheduling || { enabled: true, frequency: 'daily' };
 								settings.updateScheduling({ frequency: e.currentTarget.value as 'daily' | 'weekly' | 'on_startup' });
 							}}
 						>
@@ -326,7 +325,6 @@
 								class="input w-full"
 								value={settings.value.scheduling?.time || '02:00'}
 								onchange={(e) => {
-									const current = settings.value.scheduling || { enabled: true, frequency: 'daily' };
 									settings.updateScheduling({ time: e.currentTarget.value });
 								}}
 							/>
@@ -340,7 +338,6 @@
 								class="input w-full"
 								value={settings.value.scheduling?.day_of_week?.toString() || '0'}
 								onchange={(e) => {
-									const current = settings.value.scheduling || { enabled: true, frequency: 'weekly' };
 									settings.updateScheduling({ day_of_week: parseInt(e.currentTarget.value) });
 								}}
 							>

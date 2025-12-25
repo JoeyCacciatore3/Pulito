@@ -7,7 +7,7 @@
 	import LoadingSpinner from './ui/LoadingSpinner.svelte';
 	import ProgressBar from './ui/ProgressBar.svelte';
 	import PreviewDialog from './PreviewDialog.svelte';
-	import type { CleanupPreview, PreviewItem } from '$lib/generated/types';
+	import type { CleanupPreview } from '$lib/generated/types';
 
 	interface CleanupItem {
 		id: string;
