@@ -327,18 +327,18 @@ pub async fn scan_system_async(
                 emit_progress("logs", 100, &format!("Log scan failed: {}", e), 0, 0, completed_phases);
             }
         }
+    }
 
+    if options.include_large_files {
         // Check memory usage
         let now = Instant::now();
         if now.duration_since(last_memory_check) > memory_check_interval {
             if let Err(e) = check_memory_limits(&scan_limits).await {
                 return Err(ScannerError::MemoryLimitExceeded(e.to_string()));
             }
-            last_memory_check = now;
+            // Note: This is the last memory check, so we don't update last_memory_check
         }
-    }
 
-    if options.include_large_files {
         emit_progress("large_files", 0, "Scanning for large files...", 0, 0, completed_phases);
 
         match scan_large_files_async(&scan_limits).await {

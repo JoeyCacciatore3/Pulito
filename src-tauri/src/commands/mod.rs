@@ -1154,6 +1154,7 @@ pub async fn scan_for_old_files(_app_handle: tauri::AppHandle) -> Result<ScanRes
 }
 
 #[tauri::command]
+#[allow(dead_code)]
 pub async fn scan_filesystem_tree(
     root_path: String,
     max_depth: usize,
@@ -1202,6 +1203,7 @@ pub async fn scan_filesystem_tree(
 }
 
 /// Recursively scan a directory and collect file/directory information
+#[allow(dead_code)]
 fn scan_filesystem_tree_recursive(
     root_path: &Path,
     max_depth: usize,
@@ -1309,6 +1311,7 @@ fn scan_filesystem_tree_recursive(
     Ok(result)
 }
 
+#[allow(dead_code)]
 fn scan_directory_recursive(
     path: &Path,
     results: &mut Vec<TreeNode>,
@@ -1421,6 +1424,7 @@ fn scan_directory_recursive(
 }
 
 /// Build tree structure from flat list of nodes
+#[allow(dead_code)]
 fn build_tree_structure(items: &[TreeNode], root_path: &Path) -> Result<Vec<TreeNode>, String> {
     let root_str = root_path.to_string_lossy().to_string();
     let mut tree_map: std::collections::HashMap<String, TreeNode> = std::collections::HashMap::new();
@@ -1477,6 +1481,7 @@ fn build_tree_structure(items: &[TreeNode], root_path: &Path) -> Result<Vec<Tree
 }
 
 /// Recursively build tree node with children
+#[allow(dead_code)]
 fn build_tree_node_recursive(
     path: String,
     tree_map: &std::collections::HashMap<String, TreeNode>,
@@ -1500,6 +1505,7 @@ fn build_tree_node_recursive(
 }
 
 /// Assess risk level based on file path and type
+#[allow(dead_code)]
 fn assess_risk_level(path: &Path, is_directory: bool) -> String {
     if is_directory {
         return "safe".to_string();
@@ -1627,6 +1633,7 @@ pub enum SecurityContext {
     CacheCleanup,
     PackageManagement,
     LogCleanup,
+    #[allow(dead_code)]
     StartupManagement,
 }
 
@@ -2088,7 +2095,7 @@ pub async fn get_schedule_settings(app_handle: tauri::AppHandle) -> Result<Optio
             match result {
                 Ok(json_str) => {
                     let settings: SchedulingSettings = serde_json::from_str(&json_str)
-                        .map_err(|e| rusqlite::Error::InvalidColumnType(0, "scheduling".to_string(), rusqlite::types::Type::Text))?;
+                        .map_err(|_e| rusqlite::Error::InvalidColumnType(0, "scheduling".to_string(), rusqlite::types::Type::Text))?;
                     Ok(Some(settings))
                 }
                 Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
@@ -2102,6 +2109,7 @@ pub async fn get_schedule_settings(app_handle: tauri::AppHandle) -> Result<Optio
 }
 
 #[tauri::command]
+#[allow(dead_code)]
 pub async fn save_schedule_settings(
     app_handle: tauri::AppHandle,
     settings: SchedulingSettings,
@@ -2135,6 +2143,7 @@ pub async fn save_schedule_settings(
 }
 
 #[tauri::command]
+#[allow(dead_code)]
 pub async fn get_schedule_status(app_handle: tauri::AppHandle) -> Result<ScheduleStatus, String> {
     let timeout_duration = Duration::from_secs(5);
 
@@ -2558,6 +2567,7 @@ pub struct PreviewItem {
 }
 
 #[tauri::command]
+#[allow(dead_code)]
 pub async fn get_cleanup_preview(app_handle: tauri::AppHandle) -> Result<CleanupPreview, String> {
     let timeout_duration = Duration::from_secs(180); // 3 minutes for comprehensive scan
 
@@ -3405,6 +3415,7 @@ lazy_static::lazy_static! {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 struct SchedulerState {
     task: Option<tokio::task::JoinHandle<()>>,
     is_running: bool,
@@ -3419,6 +3430,7 @@ impl SchedulerState {
     }
 }
 
+#[allow(dead_code)]
 async fn calculate_next_run(settings: &SchedulingSettings) -> i64 {
     use chrono::{Local, Timelike, Datelike, Duration as ChronoDuration};
 
@@ -3500,6 +3512,7 @@ async fn calculate_next_run(settings: &SchedulingSettings) -> i64 {
     next.timestamp()
 }
 
+#[allow(dead_code)]
 async fn start_scheduler(app_handle: tauri::AppHandle, mut settings: SchedulingSettings) -> Result<(), String> {
     let mut state = SCHEDULER_STATE.lock().await;
 
@@ -3538,6 +3551,7 @@ async fn start_scheduler(app_handle: tauri::AppHandle, mut settings: SchedulingS
     Ok(())
 }
 
+#[allow(dead_code)]
 async fn stop_scheduler() -> Result<(), String> {
     let mut state = SCHEDULER_STATE.lock().await;
 
@@ -3550,6 +3564,7 @@ async fn stop_scheduler() -> Result<(), String> {
     Ok(())
 }
 
+#[allow(dead_code)]
 async fn scheduler_loop(app_handle: tauri::AppHandle, mut settings: SchedulingSettings) {
     use chrono::Local;
     use tokio::time::{sleep, Duration};

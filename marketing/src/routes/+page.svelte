@@ -88,7 +88,6 @@
 						alt="Pulito Logo"
 						class="w-10 h-10 transition-transform duration-300 group-hover:scale-110"
 					/>
-					<div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 				</div>
 				<span class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent font-extrabold">Pulito</span>
 			</a>
@@ -218,7 +217,6 @@
 										alt="Pulito Matrix Interface"
 										class="w-20 h-20 rounded-xl shadow-lg object-cover"
 									/>
-									<div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur-lg"></div>
 								</div>
 							</div>
 
