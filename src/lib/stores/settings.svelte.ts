@@ -79,10 +79,14 @@ export const settings = {
 	},
 
 	updateScheduling(partial: Partial<AppSettings['scheduling']>) {
-		// Load current scheduling or create new
+		// Load current scheduling or create new with all required fields
 		const current = currentSettings.scheduling ?? {
 			enabled: false,
 			frequency: 'daily' as const,
+			time: undefined,
+			day_of_week: undefined,
+			last_run: undefined,
+			next_run: undefined,
 		};
 
 		currentSettings = {

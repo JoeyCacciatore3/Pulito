@@ -277,6 +277,64 @@
 		return insights;
 	}
 
+	async function loadPreview() {
+		try {
+			loadingPreview = true;
+			previewData = await invoke<CleanupPreview>('get_cleanup_preview');
+		} catch (e) {
+			logger.error('Failed to load cleanup preview', { component: 'SmartCleanup' }, e);
+			notificationStore.error('Preview Failed', 'Failed to load cleanup preview data');
+		} finally {
+			loadingPreview = false;
+		}
+	}
+
+	async function handlePreviewConfirm(selectedItems: any[]) {
+		if (selectedItems.length === 0) {
+			notificationStore.warning('No Items Selected', 'Please select at least one item to clean');
+			return;
+		}
+
+		const totalSize = selectedItems.reduce((sum: number, item: any) => sum + item.size, 0);
+
+		const confirmed = await confirmation.show({
+			title: 'Execute Cleanup',
+			message: `Clean ${selectedItems.length} selected items, freeing approximately ${formatBytes(totalSize)}?`,
+			confirmText: 'Execute Cleanup',
+			cancelText: 'Cancel',
+			type: 'info'
+		});
+
+		if (!confirmed) return;
+
+		try {
+			cleaning = true;
+			progress = 0;
+
+			const itemIds = selectedItems.map(item => item.id);
+			const itemPaths = selectedItems.map(item => item.path);
+
+			currentOperation = `Cleaning ${selectedItems.length} items...`;
+
+			const result = await invoke<{ cleaned: number; failed: number; total_size: number }>('clean_items', { itemIds, itemPaths, useTrash: true });
+
+			notificationStore.success(
+				'Cleanup Complete',
+				`Successfully cleaned ${result.cleaned} items, freed ${formatBytes(result.total_size)}`
+			);
+
+			// Refresh recommendations after cleanup
+			await getSmartRecommendations();
+			previewData = null; // Close preview dialog
+
+		} catch (e) {
+			logger.error('Failed to execute cleanup', { component: 'SmartCleanup' }, e);
+			notificationStore.error('Cleanup Failed', 'Failed to execute cleanup operation');
+		} finally {
+			cleaning = false;
+		}
+	}
+
 	async function executeSmartCleanup() {
 		if (!recommendations) return;
 

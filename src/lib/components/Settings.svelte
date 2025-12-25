@@ -20,25 +20,27 @@
 		}
 	}
 
-	onMount(async () => {
-		try {
-			const savedSettings = await invoke<AppSettings>('get_settings');
-			settings.load(savedSettings);
-			theme.set(savedSettings.theme as 'light' | 'dark' | 'system');
-		} catch (e) {
-			logger.error('Failed to load settings', { component: 'Settings', action: 'load_settings', operation: 'get_settings' }, e);
-			// Continue with defaults if loading fails
-			const errorMessage = e instanceof Error
-				? (e.message.includes('timed out')
-					? 'Failed to load settings. Request timed out. Using default settings.'
-					: 'Failed to load settings. Using default settings.')
-				: 'Failed to load settings. Using default settings.';
-			notificationStore.warning('Load Failed', errorMessage);
-		} finally {
-			loading = false;
-		}
+	onMount(() => {
+		(async () => {
+			try {
+				const savedSettings = await invoke<AppSettings>('get_settings');
+				settings.load(savedSettings);
+				theme.set(savedSettings.theme as 'light' | 'dark' | 'system');
+			} catch (e) {
+				logger.error('Failed to load settings', { component: 'Settings', action: 'load_settings', operation: 'get_settings' }, e);
+				// Continue with defaults if loading fails
+				const errorMessage = e instanceof Error
+					? (e.message.includes('timed out')
+						? 'Failed to load settings. Request timed out. Using default settings.'
+						: 'Failed to load settings. Using default settings.')
+					: 'Failed to load settings. Using default settings.';
+				notificationStore.warning('Load Failed', errorMessage);
+			} finally {
+				loading = false;
+			}
 
-		await loadScheduleStatus();
+			await loadScheduleStatus();
+		})();
 
 		// Refresh status every 30 seconds
 		const interval = setInterval(loadScheduleStatus, 30000);
@@ -303,8 +305,9 @@
 			{#if settings.value.scheduling?.enabled}
 				<div class="p-4 border border-[var(--color-border)] rounded-lg">
 					<div class="mb-3">
-						<label class="block text-sm font-medium mb-2">Frequency</label>
+						<label class="block text-sm font-medium mb-2" for="scheduling-frequency">Frequency</label>
 						<select
+							id="scheduling-frequency"
 							class="input w-full"
 							value={settings.value.scheduling?.frequency || 'daily'}
 							onchange={(e) => {
@@ -319,8 +322,9 @@
 
 					{#if settings.value.scheduling?.frequency === 'daily' || settings.value.scheduling?.frequency === 'weekly'}
 						<div class="mb-3">
-							<label class="block text-sm font-medium mb-2">Time</label>
+							<label class="block text-sm font-medium mb-2" for="scheduling-time">Time</label>
 							<input
+								id="scheduling-time"
 								type="time"
 								class="input w-full"
 								value={settings.value.scheduling?.time || '02:00'}
@@ -333,8 +337,9 @@
 
 					{#if settings.value.scheduling?.frequency === 'weekly'}
 						<div class="mb-3">
-							<label class="block text-sm font-medium mb-2">Day of Week</label>
+							<label class="block text-sm font-medium mb-2" for="scheduling-day">Day of Week</label>
 							<select
+								id="scheduling-day"
 								class="input w-full"
 								value={settings.value.scheduling?.day_of_week?.toString() || '0'}
 								onchange={(e) => {

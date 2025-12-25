@@ -38,6 +38,13 @@
 		items.forEach(item => selectedItems.delete(item.id));
 	}
 
+	function handleCategoryKeydown(event: KeyboardEvent, category: string) {
+		if (event.key === 'Enter' || event.key === ' ') {
+			event.preventDefault();
+			toggleCategory(category);
+		}
+	}
+
 	function getSelectedSize(): number {
 		if (!preview) return 0;
 
@@ -97,7 +104,11 @@
 					<div class="border border-[var(--color-border)] rounded-lg">
 						<div
 							class="p-4 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between cursor-pointer"
+							role="button"
+							tabindex="0"
+							aria-expanded={expandedCategories.has('cache')}
 							onclick={() => toggleCategory('cache')}
+							onkeydown={(event) => handleCategoryKeydown(event, 'cache')}
 						>
 							<div class="flex items-center gap-3">
 								<span class="text-lg">{expandedCategories.has('cache') ? '▼' : '▶'}</span>
@@ -148,7 +159,11 @@
 					<div class="border border-[var(--color-border)] rounded-lg">
 						<div
 							class="p-4 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between cursor-pointer"
+							role="button"
+							tabindex="0"
+							aria-expanded={expandedCategories.has('logs')}
 							onclick={() => toggleCategory('logs')}
+							onkeydown={(event) => handleCategoryKeydown(event, 'logs')}
 						>
 							<div class="flex items-center gap-3">
 								<span class="text-lg">{expandedCategories.has('logs') ? '▼' : '▶'}</span>
@@ -199,7 +214,11 @@
 					<div class="border border-[var(--color-border)] rounded-lg">
 						<div
 							class="p-4 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between cursor-pointer"
+							role="button"
+							tabindex="0"
+							aria-expanded={expandedCategories.has('filesystem')}
 							onclick={() => toggleCategory('filesystem')}
+							onkeydown={(event) => handleCategoryKeydown(event, 'filesystem')}
 						>
 							<div class="flex items-center gap-3">
 								<span class="text-lg">{expandedCategories.has('filesystem') ? '▼' : '▶'}</span>
@@ -252,7 +271,11 @@
 					<div class="border border-[var(--color-border)] rounded-lg">
 						<div
 							class="p-4 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between cursor-pointer"
+							role="button"
+							tabindex="0"
+							aria-expanded={expandedCategories.has('storage')}
 							onclick={() => toggleCategory('storage')}
+							onkeydown={(event) => handleCategoryKeydown(event, 'storage')}
 						>
 							<div class="flex items-center gap-3">
 								<span class="text-lg">{expandedCategories.has('storage') ? '▼' : '▶'}</span>
