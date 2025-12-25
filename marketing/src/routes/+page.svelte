@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { base } from '$app/paths';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/environment';
 
@@ -80,7 +81,7 @@
 <header class="sticky top-0 z-40 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-border)]">
 	<nav class="container mx-auto px-4 py-4 max-w-7xl">
 		<div class="flex items-center justify-between">
-			<a href="/" class="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
+			<a href="{base}/" class="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
 				<div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
 					<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M3 6h18M3 12h18M3 18h18" />
@@ -107,11 +108,11 @@
 
 			<!-- Desktop navigation -->
 			<div class="hidden md:flex items-center gap-6">
-				<a href="/features" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors">Features</a>
-				<a href="/download" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors">Download</a>
-				<a href="/faq" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors">FAQ</a>
+				<a href="{base}/features" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors">Features</a>
+				<a href="{base}/download" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors">Download</a>
+				<a href="{base}/faq" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] transition-colors">FAQ</a>
 				<button
-					onclick={() => goto('/download')}
+					onclick={() => goto(`${base}/download`)}
 					class="btn btn-primary"
 					aria-label="Download Pulito for free"
 				>
@@ -123,11 +124,11 @@
 		<!-- Mobile navigation menu -->
 		<div id="mobile-menu" class="{mobileMenuOpen ? '' : 'hidden'} md:hidden mt-4 pb-4 border-t border-[var(--color-border)]">
 			<div class="flex flex-col gap-3 pt-4">
-				<a href="/features" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] py-2">Features</a>
-				<a href="/download" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] py-2">Download</a>
-				<a href="/faq" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] py-2">FAQ</a>
+				<a href="{base}/features" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] py-2">Features</a>
+				<a href="{base}/download" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] py-2">Download</a>
+				<a href="{base}/faq" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)] py-2">FAQ</a>
 				<button
-					onclick={() => goto('/download')}
+					onclick={() => goto(`${base}/download`)}
 					class="btn btn-primary w-full mt-2"
 					aria-label="Download Pulito for free"
 				>
@@ -157,7 +158,7 @@
 
 					<div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start mb-6 md:mb-8">
 						<button
-							onclick={() => goto('/download')}
+							onclick={() => goto(`${base}/download`)}
 							class="btn btn-primary btn-lg px-8 py-4 text-base md:text-lg font-semibold shadow-lg hover:shadow-xl transition-shadow"
 							aria-label="Try Pulito for free"
 						>
@@ -285,7 +286,7 @@
 				Get started with Pulito today and keep your Linux system running smoothly.
 			</p>
 			<button
-				onclick={() => goto('/download')}
+				onclick={() => goto(`${base}/download`)}
 				class="btn bg-white text-blue-600 hover:bg-gray-100 btn-lg px-8 py-4 text-lg font-semibold shadow-lg"
 				aria-label="Download Pulito now"
 			>
@@ -307,9 +308,9 @@
 				<div>
 					<h4 class="font-semibold mb-4 text-[var(--color-text)]">Product</h4>
 					<ul class="space-y-2 text-sm">
-						<li><a href="/features" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Features</a></li>
-						<li><a href="/download" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Download</a></li>
-						<li><a href="/faq" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">FAQ</a></li>
+						<li><a href="{base}/features" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Features</a></li>
+						<li><a href="{base}/download" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Download</a></li>
+						<li><a href="{base}/faq" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">FAQ</a></li>
 					</ul>
 				</div>
 				<div>
@@ -324,8 +325,8 @@
 				<div>
 					<h4 class="font-semibold mb-4 text-[var(--color-text)]">Legal</h4>
 					<ul class="space-y-2 text-sm">
-						<li><a href="/privacy" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Privacy</a></li>
-						<li><a href="/terms" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Terms</a></li>
+						<li><a href="{base}/privacy" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Privacy</a></li>
+						<li><a href="{base}/terms" class="text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Terms</a></li>
 					</ul>
 				</div>
 			</div>

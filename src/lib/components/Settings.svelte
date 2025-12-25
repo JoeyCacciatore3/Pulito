@@ -5,10 +5,20 @@
 	import { onMount } from 'svelte';
 	import { notificationStore } from '$lib/stores/notifications.svelte';
 	import { logger } from '$lib/utils/logger';
+	import type { ScheduleStatus } from '$lib/generated/types';
 
 	let saving = $state(false);
 	let saved = $state(false);
 	let loading = $state(true);
+	let scheduleStatus = $state<ScheduleStatus | null>(null);
+
+	async function loadScheduleStatus() {
+		try {
+			scheduleStatus = await invoke<ScheduleStatus>('get_schedule_status', undefined, 5000);
+		} catch (e) {
+			logger.error('Failed to load schedule status', { component: 'Settings' }, e);
+		}
+	}
 
 	onMount(async () => {
 		try {
@@ -27,12 +37,26 @@
 		} finally {
 			loading = false;
 		}
+
+		await loadScheduleStatus();
+
+		// Refresh status every 30 seconds
+		const interval = setInterval(loadScheduleStatus, 30000);
+		return () => clearInterval(interval);
 	});
 
 	async function saveSettings() {
 		saving = true;
 		try {
+			// Save main settings
 			await invoke('save_settings', { settings: settings.value });
+
+			// Save scheduling separately if it exists
+			if (settings.value.scheduling) {
+				await invoke('save_schedule_settings', { settings: settings.value.scheduling });
+				await loadScheduleStatus(); // Refresh status
+			}
+
 			saved = true;
 			notificationStore.success('Settings Saved', 'Your settings have been saved successfully');
 			setTimeout(() => (saved = false), 2000);
@@ -233,6 +257,123 @@
 					</select>
 				</div>
 			</div>
+		</div>
+	</section>
+
+	<!-- Automatic Scheduling -->
+	<section class="card p-5 space-y-4">
+		<div>
+			<h2 class="font-semibold text-lg mb-1">⏰ Automatic Cleanup Schedule</h2>
+			<p class="text-sm text-[var(--color-text-secondary)]">
+				Set up automatic cleanup to run on a schedule without manual intervention.
+			</p>
+		</div>
+
+		<div class="space-y-4">
+			<div class="p-4 border border-[var(--color-border)] rounded-lg bg-gradient-to-r from-blue-50/50 to-transparent dark:from-blue-900/10">
+				<div class="flex items-center justify-between mb-2">
+					<div class="flex-1">
+						<span class="font-medium flex items-center gap-2">
+							<span class="text-lg">🔄</span>
+							Enable Scheduled Cleanup
+						</span>
+						<p class="text-xs text-[var(--color-text-muted)] mt-1">
+							Automatically run safe cleanup operations on schedule
+						</p>
+					</div>
+					<button
+						class="relative w-12 h-6 rounded-full transition-colors {(settings.value.scheduling?.enabled ?? false)
+							? 'bg-primary-600'
+							: 'bg-gray-300 dark:bg-gray-600'}"
+						aria-label="Toggle scheduled cleanup {(settings.value.scheduling?.enabled ?? false) ? 'off' : 'on'}"
+						onclick={() => {
+							const current = settings.value.scheduling || { enabled: false, frequency: 'daily' };
+							settings.updateScheduling({ enabled: !current.enabled });
+						}}
+					>
+						<span
+							class="absolute top-1 w-4 h-4 bg-white rounded-full transition-transform {(settings.value.scheduling?.enabled ?? false)
+								? 'translate-x-7'
+								: 'translate-x-1'}"
+						></span>
+					</button>
+				</div>
+			</div>
+
+			{#if settings.value.scheduling?.enabled}
+				<div class="p-4 border border-[var(--color-border)] rounded-lg">
+					<div class="mb-3">
+						<label class="block text-sm font-medium mb-2">Frequency</label>
+						<select
+							class="input w-full"
+							value={settings.value.scheduling?.frequency || 'daily'}
+							onchange={(e) => {
+								const current = settings.value.scheduling || { enabled: true, frequency: 'daily' };
+								settings.updateScheduling({ frequency: e.currentTarget.value as 'daily' | 'weekly' | 'on_startup' });
+							}}
+						>
+							<option value="daily">Daily</option>
+							<option value="weekly">Weekly</option>
+							<option value="on_startup">On App Startup</option>
+						</select>
+					</div>
+
+					{#if settings.value.scheduling?.frequency === 'daily' || settings.value.scheduling?.frequency === 'weekly'}
+						<div class="mb-3">
+							<label class="block text-sm font-medium mb-2">Time</label>
+							<input
+								type="time"
+								class="input w-full"
+								value={settings.value.scheduling?.time || '02:00'}
+								onchange={(e) => {
+									const current = settings.value.scheduling || { enabled: true, frequency: 'daily' };
+									settings.updateScheduling({ time: e.currentTarget.value });
+								}}
+							/>
+						</div>
+					{/if}
+
+					{#if settings.value.scheduling?.frequency === 'weekly'}
+						<div class="mb-3">
+							<label class="block text-sm font-medium mb-2">Day of Week</label>
+							<select
+								class="input w-full"
+								value={settings.value.scheduling?.day_of_week?.toString() || '0'}
+								onchange={(e) => {
+									const current = settings.value.scheduling || { enabled: true, frequency: 'weekly' };
+									settings.updateScheduling({ day_of_week: parseInt(e.currentTarget.value) });
+								}}
+							>
+								<option value="0">Sunday</option>
+								<option value="1">Monday</option>
+								<option value="2">Tuesday</option>
+								<option value="3">Wednesday</option>
+								<option value="4">Thursday</option>
+								<option value="5">Friday</option>
+								<option value="6">Saturday</option>
+							</select>
+						</div>
+					{/if}
+
+					{#if scheduleStatus}
+						<div class="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
+							<div class="text-sm">
+								<div class="font-medium text-blue-900 dark:text-blue-100 mb-1">Schedule Status</div>
+								{#if scheduleStatus.next_run}
+									<div class="text-blue-700 dark:text-blue-300">
+										Next run: {new Date(scheduleStatus.next_run * 1000).toLocaleString()}
+									</div>
+								{/if}
+								{#if scheduleStatus.last_run}
+									<div class="text-blue-700 dark:text-blue-300">
+										Last run: {new Date(scheduleStatus.last_run * 1000).toLocaleString()}
+									</div>
+								{/if}
+							</div>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</section>
 

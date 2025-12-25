@@ -1361,7 +1361,7 @@ fn scan_old_downloads(days_threshold: u64) -> AnyhowResult<Vec<ScanItem>> {
     Ok(old_downloads)
 }
 
-fn format_bytes(bytes: u64) -> String {
+pub fn format_bytes(bytes: u64) -> String {
     const UNITS: &[&str] = &["B", "KB", "MB", "GB", "TB"];
     let mut size = bytes as f64;
     let mut unit_index = 0;

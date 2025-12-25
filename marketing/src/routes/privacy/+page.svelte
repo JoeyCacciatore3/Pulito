@@ -1,3 +1,7 @@
+<script lang="ts">
+	import { base } from '$app/paths';
+</script>
+
 <svelte:head>
 	<title>Privacy Policy - Pulito</title>
 	<meta name="description" content="Privacy policy for Pulito - your privacy is important to us." />
@@ -7,7 +11,7 @@
 	<header class="sticky top-0 z-40 bg-[var(--color-bg)]/95 backdrop-blur-sm border-b border-[var(--color-border)]">
 		<nav class="container mx-auto px-4 py-4 max-w-7xl">
 			<div class="flex items-center justify-between">
-				<a href="/" class="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
+				<a href="{base}/" class="flex items-center gap-2 text-xl font-bold text-[var(--color-text)]">
 					<div class="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
 						<svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<path d="M3 6h18M3 12h18M3 18h18" />
@@ -18,7 +22,7 @@
 					</div>
 					<span>Pulito</span>
 				</a>
-				<a href="/" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Back to Home</a>
+				<a href="{base}/" class="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">Back to Home</a>
 			</div>
 		</nav>
 	</header>

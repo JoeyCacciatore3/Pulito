@@ -6,6 +6,7 @@ pub mod commands;
 pub mod db;
 pub mod packages;
 pub mod scanner;
+pub mod startup;
 pub mod trash;
 
 use db::AppState;
@@ -99,6 +100,13 @@ fn main() {
         collection.register::<trash::TrashItem>();
         collection.register::<trash::TrashMetadata>();
         collection.register::<trash::TrashData>();
+        collection.register::<commands::QuickCleanResult>();
+        collection.register::<commands::SchedulingSettings>();
+        collection.register::<commands::ScheduleStatus>();
+        collection.register::<commands::CleanupPreview>();
+        collection.register::<commands::PreviewItem>();
+        collection.register::<startup::StartupProgram>();
+        collection.register::<startup::StartupProgramsList>();
         let types = collection;
 
         match Typescript::default()
@@ -206,12 +214,19 @@ fn main() {
             commands::clear_cache,
             commands::clean_packages,
             commands::clear_logs,
+            commands::quick_clean_safe,
+            commands::get_cleanup_preview,
             commands::get_trash_items,
             commands::restore_from_trash,
             commands::delete_from_trash,
             commands::empty_trash,
             commands::get_settings,
             commands::save_settings,
+            commands::get_schedule_settings,
+            commands::save_schedule_settings,
+            commands::get_schedule_status,
+            startup::get_startup_programs,
+            startup::toggle_startup_program,
             // DiskPulse commands
             commands::start_diskpulse_monitoring,
             commands::stop_diskpulse_monitoring,

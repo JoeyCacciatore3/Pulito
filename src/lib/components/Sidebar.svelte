@@ -56,6 +56,7 @@
 		{ id: 'cleanup', label: 'Smart Cleanup', icon: 'sparkles' },
 		{ id: 'treeview', label: 'File Explorer', icon: 'folder' },
 		{ id: 'filesystem-health', label: 'Filesystem Health', icon: 'health' },
+		{ id: 'startup', label: 'Startup Manager', icon: 'activity' },
 		{ id: 'trash', label: 'Trash', icon: 'trash' },
 		{ id: 'settings', label: 'Settings', icon: 'settings' }
 	];

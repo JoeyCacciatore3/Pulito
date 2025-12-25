@@ -92,8 +92,8 @@
 			console.log('Tree data loaded:', treeData.length, 'items');
 		} catch (error) {
 			console.error('Failed to load tree data:', error);
-			logger.error('Failed to load tree data', { component: 'EnhancedTreeView' }, error);
-			notificationStore.error('Tree Load Failed', 'Could not load file tree structure');
+			logger.error('Failed to load tree data', { component: 'EnhancedTreeView', options }, error);
+			notificationStore.error('Tree Load Failed', `Could not load file tree structure: ${error}`);
 		} finally {
 			loading = false;
 		}

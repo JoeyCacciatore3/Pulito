@@ -10,8 +10,10 @@
 	import SparklineChart from './charts/SparklineChart.svelte';
 	import { getCPUHistory, getMemoryHistory } from '$lib/stores/metrics-history.svelte';
 	import { invoke as tauriInvoke } from '@tauri-apps/api/core';
+	import ProgressBar from './ui/ProgressBar.svelte';
+	import LoadingSpinner from './ui/LoadingSpinner.svelte';
 
-	import type { SystemStats } from '$lib/generated/types';
+	import type { SystemStats, QuickCleanResult } from '$lib/generated/types';
 
 	interface CleanupCategory {
 		id: string;
@@ -225,17 +227,56 @@
 		navigation.set(category.route as any);
 	}
 
+	let quickCleaning = $state(false);
+	let quickCleanProgress = $state(0);
+
 	async function startQuickClean() {
 		const confirmed = await confirmation.show({
-			title: 'Quick System Clean',
-			message: 'Run AI-powered smart cleanup for immediate system optimization.',
-			confirmText: 'Start Smart Clean',
+			title: 'One-Click Clean',
+			message: 'This will safely clean cache, logs, and filesystem health items. Only risk-free operations will be performed.',
+			confirmText: 'Start Clean',
 			cancelText: 'Cancel',
 			type: 'info'
 		});
 
-		if (confirmed) {
-			navigation.set('cleanup');
+		if (!confirmed) return;
+
+		try {
+			quickCleaning = true;
+			quickCleanProgress = 0;
+
+			// Simulate progress updates
+			const progressInterval = setInterval(() => {
+				if (quickCleanProgress < 90) {
+					quickCleanProgress += 10;
+				}
+			}, 500);
+
+			const result = await invoke<QuickCleanResult>('quick_clean_safe', undefined, 120000);
+
+			clearInterval(progressInterval);
+			quickCleanProgress = 100;
+
+			if (result.failed > 0) {
+				notificationStore.warning(
+					'Cleanup Partial',
+					`Cleaned ${result.cleaned} items (${formatBytes(result.total_size)}) from ${result.categories.length} categories. ${result.failed} items failed.`
+				);
+			} else {
+				notificationStore.success(
+					'One-Click Clean Complete',
+					`Successfully cleaned ${result.cleaned} items, freed ${formatBytes(result.total_size)} in ${(result.duration_ms / 1000).toFixed(1)}s`
+				);
+			}
+
+			// Refresh stats
+			setTimeout(() => loadStats(), 1000);
+		} catch (e) {
+			logger.error('Quick clean failed', { component: 'Dashboard', action: 'quick_clean' }, e);
+			notificationStore.error('Cleanup Failed', `Failed to complete quick clean: ${e instanceof Error ? e.message : String(e)}`);
+		} finally {
+			quickCleaning = false;
+			setTimeout(() => (quickCleanProgress = 0), 2000);
 		}
 	}
 </script>
@@ -249,7 +290,15 @@
 	</div>
 
 	<!-- Quick Actions Bar -->
-	{#if stats}
+	{#if quickCleaning}
+		<div class="card p-4">
+			<div class="flex items-center gap-3 mb-2">
+				<LoadingSpinner size="sm" />
+				<span class="font-medium">Cleaning system...</span>
+			</div>
+			<ProgressBar percentage={quickCleanProgress} class="h-2" />
+		</div>
+	{:else if stats}
 		<div class="card p-4">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-4">
@@ -257,15 +306,17 @@
 						<span class="text-2xl">⚡</span>
 					</div>
 					<div>
-						<h3 class="font-semibold">Ready to Clean</h3>
-						<p class="text-sm text-muted">Safe cleanup options available</p>
+						<h3 class="font-semibold">One-Click Clean</h3>
+						<p class="text-sm text-muted">Safe cleanup in seconds</p>
 					</div>
 				</div>
-				<div class="flex gap-2">
-					<button class="btn btn-secondary" onclick={startQuickClean}>
-						Smart Clean
-					</button>
-				</div>
+				<button
+					class="btn btn-primary btn-lg px-6"
+					onclick={startQuickClean}
+					disabled={quickCleaning}
+				>
+					🧹 Clean Now
+				</button>
 			</div>
 		</div>
 	{/if}

@@ -78,6 +78,19 @@ export const settings = {
 		};
 	},
 
+	updateScheduling(partial: Partial<AppSettings['scheduling']>) {
+		// Load current scheduling or create new
+		const current = currentSettings.scheduling || {
+			enabled: false,
+			frequency: 'daily' as const,
+		};
+
+		currentSettings = {
+			...currentSettings,
+			scheduling: { ...current, ...partial }
+		};
+	},
+
 	reset() {
 		currentSettings = { ...defaultSettings };
 	},

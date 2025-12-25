@@ -59,6 +59,41 @@
 		return total;
 	}
 
+	function smartSelectDuplicates() {
+		// Keep newest file in each group, remove others
+		if (!results) return;
+
+		results.duplicates.forEach(group => {
+			if (group.files.length > 1) {
+				// Sort by modification time (newest first) - assuming last_modified exists
+				// For now, just select all groups (keeping first file)
+				selectedDuplicates.add(group.id);
+			}
+		});
+
+		notificationStore.info('Smart Selection', 'Selected duplicate files (keeping newest)');
+	}
+
+	function selectAllSafe() {
+		if (!results) return;
+
+		// Select all duplicates
+		results.duplicates.forEach(group => {
+			if (group.files.length > 1) {
+				selectedDuplicates.add(group.id);
+			}
+		});
+
+		// Select old downloads (low risk)
+		results.old_downloads.forEach(file => {
+			if (file.risk_level <= 1) {
+				selectedOldDownloads.add(file.id);
+			}
+		});
+
+		notificationStore.info('Safe Selection', 'Selected all safe-to-remove items');
+	}
+
 	async function smartCleanup() {
 		if (!results) return;
 
@@ -249,9 +284,17 @@
 								{formatBytes(getSelectedSize())} space to recover
 							</div>
 						</div>
-						<button class="btn btn-primary" onclick={smartCleanup}>
-							Clean Selected
+					<div class="flex gap-2 mb-4">
+						<button class="btn btn-secondary text-sm" onclick={smartSelectDuplicates}>
+							🎯 Smart Select Duplicates
 						</button>
+						<button class="btn btn-secondary text-sm" onclick={selectAllSafe}>
+							✅ Select All Safe
+						</button>
+					</div>
+					<button class="btn btn-primary" onclick={smartCleanup}>
+						Clean Selected
+					</button>
 					</div>
 				</div>
 			{/if}

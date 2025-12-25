@@ -9,10 +9,11 @@ use notify::Watcher;
 use walkdir::WalkDir;
 use tauri::Manager;
 use dirs;
+use chrono;
 
 use crate::packages;
 use crate::db::DbAccess;
-use crate::scanner::{self, ScanOptions, ScanResults, FilesystemHealthResults, StorageRecoveryResults};
+use crate::scanner::{self, ScanOptions, ScanResults, FilesystemHealthResults, StorageRecoveryResults, format_bytes};
 use crate::trash::{self, TrashData, TrashMetadata};
 
 // Cache analytics structures
@@ -67,6 +68,8 @@ pub struct AppSettings {
     pub notifications: NotificationSettings,
     pub scan: ScanSettings,
     pub theme: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scheduling: Option<SchedulingSettings>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -96,6 +99,26 @@ pub struct NotificationSettings {
 pub struct ScanSettings {
     pub include_hidden: bool,
     pub large_file_threshold_mb: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[specta(export)]
+pub struct SchedulingSettings {
+    pub enabled: bool,
+    pub frequency: String, // "daily", "weekly", "on_startup"
+    pub time: Option<String>, // "HH:MM" format for daily/weekly
+    pub day_of_week: Option<u8>, // 0-6 (0=Sunday) for weekly
+    pub last_run: Option<i64>, // Unix timestamp
+    pub next_run: Option<i64>, // Unix timestamp
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[specta(export)]
+pub struct ScheduleStatus {
+    pub enabled: bool,
+    pub next_run: Option<i64>,
+    pub last_run: Option<i64>,
+    pub status: String, // "active", "paused", "never_run"
 }
 
 // DiskPulse data structures
@@ -289,17 +312,26 @@ impl Default for AppSettings {
             notifications: NotificationSettings { system: true, tray: true, in_app: true },
             scan: ScanSettings { include_hidden: false, large_file_threshold_mb: 100 },
             theme: "system".to_string(),
+            scheduling: None, // Optional, user must configure
         }
     }
 }
 
 #[allow(dead_code)]
 #[tauri::command]
-pub async fn initialize_app() -> Result<(), String> {
+pub async fn initialize_app(app_handle: tauri::AppHandle) -> Result<(), String> {
     tracing::info!("Initializing application...");
 
     if let Err(e) = trash::cleanup_expired() {
         tracing::warn!("Failed to cleanup expired trash: {}", e);
+    }
+
+    // Check for on_startup scheduling
+    if let Ok(Some(schedule)) = get_schedule_settings(app_handle.clone()).await {
+        if schedule.enabled && schedule.frequency == "on_startup" {
+            tracing::info!("On-startup cleanup scheduled, executing...");
+            let _ = quick_clean_safe(app_handle.clone()).await;
+        }
     }
 
     Ok(())
@@ -1121,8 +1153,6 @@ pub async fn scan_for_old_files(_app_handle: tauri::AppHandle) -> Result<ScanRes
     Err("Function temporarily disabled".to_string())
 }
 
-/// Scan filesystem and return tree structure for File Explorer
-#[allow(dead_code)]
 #[tauri::command]
 pub async fn scan_filesystem_tree(
     root_path: String,
@@ -1133,44 +1163,37 @@ pub async fn scan_filesystem_tree(
 ) -> Result<Vec<TreeNode>, String> {
     let scan_timeout = Duration::from_secs(60);
 
-    match timeout(scan_timeout, async {
-        // Resolve the root path
-        let root_path_buf = if root_path == "~" {
-            dirs::home_dir().ok_or("Cannot determine home directory")?
-        } else {
-            PathBuf::from(root_path)
-        };
+    // Resolve the root path
+    let root_path_buf = if root_path == "~" {
+        dirs::home_dir().ok_or("Cannot determine home directory")?
+    } else {
+        PathBuf::from(root_path)
+    };
 
-        if !root_path_buf.exists() {
-            return Err(format!("Path does not exist: {}", root_path_buf.display()));
-        }
+    if !root_path_buf.exists() {
+        return Err(format!("Path does not exist: {}", root_path_buf.display()));
+    }
 
-        // Validate path for security
-        let canonical_path = root_path_buf.canonicalize()
-            .map_err(|e| format!("Failed to canonicalize path: {}", e))?;
+    // Validate path for security
+    let canonical_path = root_path_buf.canonicalize()
+        .map_err(|e| format!("Failed to canonicalize path: {}", e))?;
 
-        // Scan the filesystem tree in a blocking task
-        let canonical_path_clone = canonical_path.clone();
-        let tree_items = tokio::task::spawn_blocking(move || {
-            let mut flat_items = Vec::new();
-            scan_directory_recursive(
-                &canonical_path_clone,
-                &mut flat_items,
-                0,
-                max_depth,
-                include_hidden,
-                size_threshold,
-                &filter_patterns,
-            )?;
-            build_tree_structure(&flat_items, &canonical_path_clone)
-        })
-        .await
-        .map_err(|e| format!("Scan task failed: {}", e))?;
+    // Scan the filesystem tree in a blocking task with timeout
+    let canonical_path_clone = canonical_path.clone();
+    let scan_future = tokio::task::spawn_blocking(move || {
+        scan_filesystem_tree_recursive(
+            &canonical_path_clone,
+            max_depth,
+            include_hidden,
+            size_threshold,
+            &filter_patterns,
+        )
+    });
 
-        tree_items
-    }).await {
-        Ok(Ok(items)) => Ok(items),
-        Ok(Err(e)) => Err(e),
+    match timeout(scan_timeout, scan_future).await {
+        Ok(Ok(Ok(items))) => Ok(items),
+        Ok(Ok(Err(e))) => Err(e),
+        Ok(Err(e)) => Err(format!("Scan task failed: {}", e)),
         Err(_) => {
             tracing::error!("Filesystem tree scan timed out after {} seconds", scan_timeout.as_secs());
             Err(format!("Filesystem scan timed out after {} seconds", scan_timeout.as_secs()))
@@ -1179,6 +1202,113 @@ pub async fn scan_filesystem_tree(
 }
 
 /// Recursively scan a directory and collect file/directory information
+fn scan_filesystem_tree_recursive(
+    root_path: &Path,
+    max_depth: usize,
+    include_hidden: bool,
+    size_threshold: u64,
+    filter_patterns: &[String],
+) -> Result<Vec<TreeNode>, String> {
+    let mut result = Vec::new();
+
+    // Scan the root directory entries
+    let entries = std::fs::read_dir(root_path)
+        .map_err(|e| format!("Failed to read directory {}: {}", root_path.display(), e))?;
+
+    for entry in entries {
+        let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
+        let entry_path = entry.path();
+
+        // Skip hidden files if not requested
+        if !include_hidden {
+            if let Some(filename) = entry_path.file_name() {
+                if filename.to_string_lossy().starts_with('.') {
+                    continue;
+                }
+            }
+        }
+
+        // Check filter patterns
+        let should_include = if filter_patterns.is_empty() {
+            true
+        } else {
+            let filename = entry_path.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+            filter_patterns.iter().any(|pattern| filename.contains(pattern))
+        };
+
+        if !should_include {
+            continue;
+        }
+
+        let metadata = entry.metadata()
+            .map_err(|e| format!("Failed to get metadata for {}: {}", entry_path.display(), e))?;
+
+        let size = if metadata.is_file() {
+            metadata.len()
+        } else {
+            // For directories, get size (simplified)
+            metadata.len() // Just use directory size for now
+        };
+
+        // Skip files below size threshold
+        if metadata.is_file() && size < size_threshold {
+            continue;
+        }
+
+        // Get file timestamps
+        let last_modified = metadata.modified()
+            .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+
+        let last_accessed = metadata.accessed()
+            .unwrap_or(std::time::SystemTime::UNIX_EPOCH)
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+
+        let risk_level = assess_risk_level(&entry_path, metadata.is_dir());
+
+        let children = if metadata.is_dir() && max_depth > 0 {
+            match scan_filesystem_tree_recursive(&entry_path, max_depth - 1, include_hidden, size_threshold, filter_patterns) {
+                Ok(children) => Some(children),
+                Err(_) => None, // Skip directories we can't read
+            }
+        } else {
+            None
+        };
+
+        let node = TreeNode {
+            id: entry_path.to_string_lossy().to_string(),
+            name: entry_path.file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("unknown")
+                .to_string(),
+            path: entry_path.to_string_lossy().to_string(),
+            size,
+            is_directory: metadata.is_dir(),
+            last_modified,
+            last_accessed,
+            children,
+            expanded: false,
+            selected: false,
+            risk_level,
+            ai_insight: None,
+            usage_pattern: None,
+        };
+
+        result.push(node);
+    }
+
+    // Sort by name
+    result.sort_by(|a, b| a.name.cmp(&b.name));
+
+    Ok(result)
+}
+
 fn scan_directory_recursive(
     path: &Path,
     results: &mut Vec<TreeNode>,
@@ -1497,6 +1627,7 @@ pub enum SecurityContext {
     CacheCleanup,
     PackageManagement,
     LogCleanup,
+    StartupManagement,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -1518,7 +1649,7 @@ pub enum SecurityError {
 }
 
 /// Comprehensive path validation with multiple security layers
-fn validate_path_comprehensive(path: &str, context: SecurityContext) -> Result<(), SecurityError> {
+pub fn validate_path_comprehensive(path: &str, context: SecurityContext) -> Result<(), SecurityError> {
     use std::path::Path;
 
     let path_buf = Path::new(path);
@@ -1632,6 +1763,15 @@ fn validate_system_critical_paths(canonical_path: &str, context: &SecurityContex
         }
         SecurityContext::LogCleanup => {
             // Log cleanup can be more permissive in user areas
+        }
+        SecurityContext::StartupManagement => {
+            // Only allow modification of user-owned files
+            // Block system-wide service files
+            if canonical_path.starts_with("/etc/systemd/system") {
+                return Err(SecurityError::SystemCriticalPath {
+                    path: "/etc/systemd/system".to_string()
+                });
+            }
         }
     }
 
@@ -1936,6 +2076,101 @@ pub async fn save_settings(app_handle: tauri::AppHandle, settings: AppSettings) 
     }
 }
 
+#[tauri::command]
+pub async fn get_schedule_settings(app_handle: tauri::AppHandle) -> Result<Option<SchedulingSettings>, String> {
+    let timeout_duration = Duration::from_secs(5);
+
+    timeout(timeout_duration, async {
+        app_handle.db(|conn| {
+            let mut stmt = conn.prepare("SELECT value FROM settings WHERE key = ?")?;
+            let result: Result<String, _> = stmt.query_row(["scheduling"], |row| row.get(0));
+
+            match result {
+                Ok(json_str) => {
+                    let settings: SchedulingSettings = serde_json::from_str(&json_str)
+                        .map_err(|e| rusqlite::Error::InvalidColumnType(0, "scheduling".to_string(), rusqlite::types::Type::Text))?;
+                    Ok(Some(settings))
+                }
+                Err(rusqlite::Error::QueryReturnedNoRows) => Ok(None),
+                Err(e) => Err(e),
+            }
+        })
+    })
+    .await
+    .map_err(|_| "Timeout getting schedule settings".to_string())?
+    .map_err(|e| format!("Database error: {}", e))
+}
+
+#[tauri::command]
+pub async fn save_schedule_settings(
+    app_handle: tauri::AppHandle,
+    settings: SchedulingSettings,
+) -> Result<(), String> {
+    let timeout_duration = Duration::from_secs(5);
+
+    timeout(timeout_duration, async {
+        let json_str = serde_json::to_string(&settings)
+            .map_err(|e| format!("Serialization error: {}", e))?;
+
+        app_handle.db(|conn| {
+            conn.execute(
+                "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+                ["scheduling", &json_str],
+            )?;
+            Ok(())
+        }).map_err(|e| format!("Database error: {}", e))?;
+
+        // Start/restart scheduler if enabled
+        if settings.enabled {
+            start_scheduler(app_handle.clone(), settings).await?;
+        } else {
+            stop_scheduler().await?;
+        }
+
+        Ok(())
+    })
+    .await
+    .map_err(|_| "Timeout saving schedule settings".to_string())?
+    .map_err(|e: String| e)
+}
+
+#[tauri::command]
+pub async fn get_schedule_status(app_handle: tauri::AppHandle) -> Result<ScheduleStatus, String> {
+    let timeout_duration = Duration::from_secs(5);
+
+    timeout(timeout_duration, async {
+        let settings_opt = get_schedule_settings(app_handle.clone()).await?;
+
+        match settings_opt {
+            Some(settings) => {
+                let status = if settings.enabled {
+                    if settings.last_run.is_none() {
+                        "never_run".to_string()
+                    } else {
+                        "active".to_string()
+                    }
+                } else {
+                    "paused".to_string()
+                };
+
+                Ok(ScheduleStatus {
+                    enabled: settings.enabled,
+                    next_run: settings.next_run,
+                    last_run: settings.last_run,
+                    status,
+                })
+            }
+            None => Ok(ScheduleStatus {
+                enabled: false,
+                next_run: None,
+                last_run: None,
+                status: "never_run".to_string(),
+            }),
+        }
+    })
+    .await
+    .map_err(|_| "Timeout getting schedule status".to_string())?
+}
 
 /// Clear user cache directories (~/.cache)
 /// Only operates on safe cache locations within user's home directory
@@ -2187,6 +2422,302 @@ pub async fn clear_logs() -> Result<CleanResult, String> {
 
     tracing::info!("Log cleanup complete: {} cleaned, {} failed, {} bytes", cleaned, failed, total_size);
     Ok(CleanResult { cleaned, failed, total_size })
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[specta(export)]
+pub struct QuickCleanResult {
+    pub cleaned: u32,
+    pub failed: u32,
+    pub total_size: u64,
+    pub categories: Vec<String>,
+    pub duration_ms: u64,
+}
+
+#[tauri::command]
+pub async fn quick_clean_safe(app_handle: tauri::AppHandle) -> Result<QuickCleanResult, String> {
+    let timeout_duration = Duration::from_secs(120); // 2 minutes max
+    let start_time = std::time::Instant::now();
+
+    timeout(timeout_duration, async {
+        let mut cleaned = 0;
+        let mut failed = 0;
+        let mut total_size: u64 = 0;
+        let mut categories = Vec::new();
+
+        // 1. Clear cache (risk 0 - always safe)
+        match clear_cache().await {
+            Ok(result) => {
+                cleaned += result.cleaned as u32;
+                failed += result.failed as u32;
+                total_size += result.total_size;
+                if result.cleaned > 0 {
+                    categories.push("Cache".to_string());
+                }
+            }
+            Err(e) => {
+                tracing::warn!("Cache cleanup failed in quick clean: {}", e);
+                failed += 1;
+            }
+        }
+
+        // 2. Clear logs (risk 0 - always safe)
+        match clear_logs().await {
+            Ok(result) => {
+                cleaned += result.cleaned as u32;
+                failed += result.failed as u32;
+                total_size += result.total_size;
+                if result.cleaned > 0 {
+                    categories.push("Logs".to_string());
+                }
+            }
+            Err(e) => {
+                tracing::warn!("Log cleanup failed in quick clean: {}", e);
+                failed += 1;
+            }
+        }
+
+        // 3. Clean filesystem health safe items (risk 0-1 only)
+        match scan_filesystem_health(app_handle.clone()).await {
+            Ok(health_results) => {
+                if health_results.total_items > 0 {
+                    // Only clean items with risk_level 0-1
+                    let safe_items: Vec<_> = health_results.empty_directories
+                        .iter()
+                        .chain(health_results.broken_symlinks.iter())
+                        .chain(health_results.orphaned_temp_files.iter())
+                        .filter(|item| item.risk_level <= 1)
+                        .collect();
+
+                    if !safe_items.is_empty() {
+                        let item_ids: Vec<String> = safe_items.iter().map(|i| i.id.clone()).collect();
+                        let item_paths: Vec<String> = safe_items.iter().map(|i| i.path.clone()).collect();
+
+                        match clean_items_inner(
+                            item_ids,
+                            item_paths,
+                            false, // Direct deletion for safe items
+                            3,
+                        ).await {
+                            Ok(result) => {
+                                cleaned += result.cleaned as u32;
+                                failed += result.failed as u32;
+                                total_size += result.total_size;
+                                if result.cleaned > 0 {
+                                    categories.push("Filesystem Health".to_string());
+                                }
+                            }
+                            Err(e) => {
+                                tracing::warn!("Filesystem health cleanup failed: {}", e);
+                                failed += safe_items.len() as u32;
+                            }
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                tracing::warn!("Filesystem health scan failed in quick clean: {}", e);
+            }
+        }
+
+        let duration_ms = start_time.elapsed().as_millis() as u64;
+
+        Ok(QuickCleanResult {
+            cleaned,
+            failed,
+            total_size,
+            categories,
+            duration_ms,
+        })
+    })
+    .await
+    .map_err(|_| "Quick clean operation timed out".to_string())?
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[specta(export)]
+pub struct CleanupPreview {
+    pub cache_items: Vec<PreviewItem>,
+    pub log_items: Vec<PreviewItem>,
+    pub filesystem_items: Vec<PreviewItem>,
+    pub storage_items: Vec<PreviewItem>,
+    pub total_size: u64,
+    pub total_items: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[specta(export)]
+pub struct PreviewItem {
+    pub id: String,
+    pub name: String,
+    pub path: String,
+    pub size: u64,
+    pub category: String,
+    pub risk_level: u8,
+    pub description: String,
+}
+
+#[tauri::command]
+pub async fn get_cleanup_preview(app_handle: tauri::AppHandle) -> Result<CleanupPreview, String> {
+    let timeout_duration = Duration::from_secs(180); // 3 minutes for comprehensive scan
+
+    timeout(timeout_duration, async {
+        let mut cache_items = Vec::new();
+        let mut log_items = Vec::new();
+        let mut filesystem_items = Vec::new();
+        let mut storage_items = Vec::new();
+
+        // 1. Get cache items (scan only, no cleanup)
+        match get_cache_items().await {
+            Ok(items) => {
+                for (idx, item) in items.iter().enumerate() {
+                    cache_items.push(PreviewItem {
+                        id: format!("cache_{}", idx),
+                        name: item.name.clone(),
+                        path: item.category.clone(),
+                        size: item.size,
+                        category: "cache".to_string(),
+                        risk_level: 0,
+                        description: format!("Cache item: {}", item.name),
+                    });
+                }
+            }
+            Err(_) => {}
+        }
+
+        // 2. Get log items (simplified - scan log directories)
+        let home = dirs::home_dir().ok_or("Cannot determine home directory")?;
+        let log_dirs = vec![
+            home.join(".local/share/logs"),
+            home.join(".cache/logs"),
+        ];
+
+        for log_dir in log_dirs {
+            if log_dir.exists() {
+                let size = trash::get_dir_size(&log_dir);
+                if size > 0 {
+                    log_items.push(PreviewItem {
+                        id: format!("log_{}", log_items.len()),
+                        name: log_dir.file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("Logs")
+                            .to_string(),
+                        path: log_dir.to_string_lossy().to_string(),
+                        size,
+                        category: "logs".to_string(),
+                        risk_level: 0,
+                        description: "Log directory".to_string(),
+                    });
+                }
+            }
+        }
+
+        // 3. Get filesystem health items
+        match scan_filesystem_health(app_handle.clone()).await {
+            Ok(results) => {
+                for item in results.empty_directories {
+                    filesystem_items.push(PreviewItem {
+                        id: item.id,
+                        name: item.name,
+                        path: item.path,
+                        size: item.size,
+                        category: "empty_directory".to_string(),
+                        risk_level: item.risk_level,
+                        description: "Empty directory".to_string(),
+                    });
+                }
+                for item in results.broken_symlinks {
+                    filesystem_items.push(PreviewItem {
+                        id: item.id,
+                        name: item.name,
+                        path: item.path,
+                        size: item.size,
+                        category: "broken_symlink".to_string(),
+                        risk_level: item.risk_level,
+                        description: "Broken symbolic link".to_string(),
+                    });
+                }
+                for item in results.orphaned_temp_files {
+                    filesystem_items.push(PreviewItem {
+                        id: item.id,
+                        name: item.name,
+                        path: item.path,
+                        size: item.size,
+                        category: "orphaned_temp".to_string(),
+                        risk_level: item.risk_level,
+                        description: "Orphaned temp file".to_string(),
+                    });
+                }
+            }
+            Err(_) => {}
+        }
+
+        // 4. Get storage recovery items (duplicates, large files)
+        match scan_storage_recovery(app_handle.clone()).await {
+            Ok(results) => {
+                // Add duplicate groups
+                for group in results.duplicates {
+                    for (idx, file) in group.files.iter().enumerate().skip(1) {
+                        // Skip first file (keep it)
+                        storage_items.push(PreviewItem {
+                            id: format!("dup_{}_{}", group.id, idx),
+                            name: file.name.clone(),
+                            path: file.path.clone(),
+                            size: file.size,
+                            category: "duplicate".to_string(),
+                            risk_level: 1,
+                            description: format!("Duplicate file ({} copies)", group.group_size),
+                        });
+                    }
+                }
+
+                // Add large files
+                for file in results.large_files {
+                    storage_items.push(PreviewItem {
+                        id: file.id.clone(),
+                        name: file.name.clone(),
+                        path: file.path.clone(),
+                        size: file.size,
+                        category: "large_file".to_string(),
+                        risk_level: 2,
+                        description: format!("Large file: {}", format_bytes(file.size)),
+                    });
+                }
+
+                // Add old downloads
+                for file in results.old_downloads {
+                    storage_items.push(PreviewItem {
+                        id: file.id.clone(),
+                        name: file.name.clone(),
+                        path: file.path.clone(),
+                        size: file.size,
+                        category: "old_download".to_string(),
+                        risk_level: 1,
+                        description: "Old download file".to_string(),
+                    });
+                }
+            }
+            Err(_) => {}
+        }
+
+        let total_size = cache_items.iter().map(|i| i.size).sum::<u64>()
+            + log_items.iter().map(|i| i.size).sum::<u64>()
+            + filesystem_items.iter().map(|i| i.size).sum::<u64>()
+            + storage_items.iter().map(|i| i.size).sum::<u64>();
+
+        let total_items = cache_items.len() + log_items.len() + filesystem_items.len() + storage_items.len();
+
+        Ok(CleanupPreview {
+            cache_items,
+            log_items,
+            filesystem_items,
+            storage_items,
+            total_size,
+            total_items,
+        })
+    })
+    .await
+    .map_err(|_| "Preview scan timed out".to_string())?
 }
 
 // DiskPulse background monitoring functionality
@@ -2866,6 +3397,226 @@ pub async fn update_tray_icon(app_handle: tauri::AppHandle, status_color: String
 pub async fn update_tray_icon(_app_handle: tauri::AppHandle, _status_color: String) -> Result<(), String> {
     // Tray icons are only supported on desktop platforms
     Err("Tray icons are not supported on this platform".to_string())
+}
+
+// Scheduler state management
+lazy_static::lazy_static! {
+    static ref SCHEDULER_STATE: Arc<AsyncMutex<SchedulerState>> = Arc::new(AsyncMutex::new(SchedulerState::new()));
+}
+
+#[derive(Debug)]
+struct SchedulerState {
+    task: Option<tokio::task::JoinHandle<()>>,
+    is_running: bool,
+}
+
+impl SchedulerState {
+    fn new() -> Self {
+        Self {
+            task: None,
+            is_running: false,
+        }
+    }
+}
+
+async fn calculate_next_run(settings: &SchedulingSettings) -> i64 {
+    use chrono::{Local, Timelike, Datelike, Duration as ChronoDuration};
+
+    let now = Local::now();
+    let mut next = now;
+
+    match settings.frequency.as_str() {
+        "on_startup" => {
+            // Next run is immediate (handled separately)
+            return now.timestamp();
+        }
+        "daily" => {
+            if let Some(time_str) = &settings.time {
+                let parts: Vec<&str> = time_str.split(':').collect();
+                if parts.len() == 2 {
+                    if let (Ok(hour), Ok(minute)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+                        next = now.with_hour(hour).and_then(|d| d.with_minute(minute)).unwrap_or(now);
+                        if next <= now {
+                            next = next + ChronoDuration::days(1);
+                        }
+                    }
+                }
+            } else {
+                // Default to 2 AM
+                next = now.with_hour(2).and_then(|d| d.with_minute(0)).unwrap_or(now);
+                if next <= now {
+                    next = next + ChronoDuration::days(1);
+                }
+            }
+        }
+        "weekly" => {
+            if let Some(day) = settings.day_of_week {
+                let target_weekday = day as u32;
+                let current_weekday = now.weekday().num_days_from_sunday();
+
+                let days_ahead = if target_weekday > current_weekday {
+                    (target_weekday - current_weekday) as i64
+                } else if target_weekday < current_weekday {
+                    (7 - (current_weekday - target_weekday)) as i64
+                } else {
+                    // Same day - check if time has passed
+                    if let Some(time_str) = &settings.time {
+                        let parts: Vec<&str> = time_str.split(':').collect();
+                        if parts.len() == 2 {
+                            if let (Ok(hour), Ok(minute)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+                                let target_time = now.with_hour(hour).and_then(|d| d.with_minute(minute)).unwrap_or(now);
+                                if target_time > now {
+                                    return target_time.timestamp();
+                                }
+                            }
+                        }
+                    }
+                    7 // Next week
+                };
+
+                next = now + ChronoDuration::days(days_ahead);
+
+                if let Some(time_str) = &settings.time {
+                    let parts: Vec<&str> = time_str.split(':').collect();
+                    if parts.len() == 2 {
+                        if let (Ok(hour), Ok(minute)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+                            next = next.with_hour(hour).and_then(|d| d.with_minute(minute)).unwrap_or(next);
+                        }
+                    }
+                } else {
+                    next = next.with_hour(2).and_then(|d| d.with_minute(0)).unwrap_or(next);
+                }
+            }
+        }
+        _ => {
+            // Default to daily at 2 AM
+            next = now.with_hour(2).and_then(|d| d.with_minute(0)).unwrap_or(now);
+            if next <= now {
+                next = next + ChronoDuration::days(1);
+            }
+        }
+    }
+
+    next.timestamp()
+}
+
+async fn start_scheduler(app_handle: tauri::AppHandle, mut settings: SchedulingSettings) -> Result<(), String> {
+    let mut state = SCHEDULER_STATE.lock().await;
+
+    if state.is_running {
+        // Stop existing scheduler
+        if let Some(task) = state.task.take() {
+            task.abort();
+        }
+    }
+
+    // Calculate next run time
+    let next_run = calculate_next_run(&settings).await;
+    settings.next_run = Some(next_run);
+
+    // Save updated settings with next_run
+    let json_str = serde_json::to_string(&settings)
+        .map_err(|e| format!("Serialization error: {}", e))?;
+
+    app_handle.db(|conn| {
+        conn.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+            ["scheduling", &json_str],
+        )?;
+        Ok(())
+    }).map_err(|e| format!("Database error: {}", e))?;
+
+    let app_handle_clone = app_handle.clone();
+    let task = tokio::spawn(async move {
+        scheduler_loop(app_handle_clone, settings).await;
+    });
+
+    state.task = Some(task);
+    state.is_running = true;
+
+    tracing::info!("Scheduler started, next run at {}", next_run);
+    Ok(())
+}
+
+async fn stop_scheduler() -> Result<(), String> {
+    let mut state = SCHEDULER_STATE.lock().await;
+
+    if let Some(task) = state.task.take() {
+        task.abort();
+    }
+
+    state.is_running = false;
+    tracing::info!("Scheduler stopped");
+    Ok(())
+}
+
+async fn scheduler_loop(app_handle: tauri::AppHandle, mut settings: SchedulingSettings) {
+    use chrono::Local;
+    use tokio::time::{sleep, Duration};
+
+    loop {
+        // Handle on_startup separately
+        if settings.frequency == "on_startup" {
+            // This is handled in initialize_app, skip loop
+            break;
+        }
+
+        // Calculate time until next run
+        let now = Local::now().timestamp();
+        let next_run = settings.next_run.unwrap_or(now);
+
+        if next_run > now {
+            let wait_seconds = (next_run - now) as u64;
+            tracing::info!("Scheduler waiting {} seconds until next run", wait_seconds);
+            sleep(Duration::from_secs(wait_seconds)).await;
+        }
+
+        // Execute cleanup
+        tracing::info!("Scheduled cleanup starting");
+        match quick_clean_safe(app_handle.clone()).await {
+            Ok(result) => {
+                tracing::info!(
+                    "Scheduled cleanup completed: {} items, {} bytes",
+                    result.cleaned,
+                    result.total_size
+                );
+
+                // Update last_run
+                settings.last_run = Some(Local::now().timestamp());
+
+                // Calculate next run
+                let next = calculate_next_run(&settings).await;
+                settings.next_run = Some(next);
+
+                // Save updated settings
+                if let Ok(json_str) = serde_json::to_string(&settings) {
+                    let _ = app_handle.db(|conn| {
+                        conn.execute(
+                            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+                            ["scheduling", &json_str],
+                        )?;
+                        Ok(())
+                    });
+                }
+
+                // Send notification (using Tauri 2.x plugin)
+                // Note: In Tauri 2.x, notifications are handled via the plugin
+                // For now, we'll just log the completion
+                tracing::info!(
+                    "Scheduled cleanup completed: {} items, {} bytes freed",
+                    result.cleaned,
+                    format_bytes(result.total_size)
+                );
+            }
+            Err(e) => {
+                tracing::error!("Scheduled cleanup failed: {}", e);
+            }
+        }
+
+        // Recalculate next run for next iteration
+        let next = calculate_next_run(&settings).await;
+        settings.next_run = Some(next);
+    }
 }
 
 #[cfg(test)]

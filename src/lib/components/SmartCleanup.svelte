@@ -6,6 +6,8 @@
 	import { logger } from '$lib/utils/logger';
 	import LoadingSpinner from './ui/LoadingSpinner.svelte';
 	import ProgressBar from './ui/ProgressBar.svelte';
+	import PreviewDialog from './PreviewDialog.svelte';
+	import type { CleanupPreview, PreviewItem } from '$lib/generated/types';
 
 	interface CleanupItem {
 		id: string;
@@ -47,6 +49,8 @@
 	let cleaning = $state(false);
 	let progress = $state(0);
 	let currentOperation = $state('');
+	let previewData = $state<CleanupPreview | null>(null);
+	let loadingPreview = $state(false);
 
 	// AI-powered cleanup recommendations with 2025-level insights
 	async function getSmartRecommendations() {
@@ -548,18 +552,32 @@
 			<h1 class="text-2xl font-bold mb-1">Smart Cleanup</h1>
 			<p class="text-muted">AI-powered system optimization with intelligent recommendations</p>
 		</div>
-		<button
-			class="btn btn-secondary"
-			onclick={getSmartRecommendations}
-			disabled={scanning || cleaning}
-		>
-			{#if scanning}
-				<LoadingSpinner size="sm" />
-				Analyzing...
-			{:else}
-				🔄 Refresh Analysis
-			{/if}
-		</button>
+		<div class="flex gap-2">
+			<button
+				class="btn btn-secondary"
+				onclick={loadPreview}
+				disabled={loadingPreview}
+			>
+				{#if loadingPreview}
+					<LoadingSpinner size="sm" />
+					Loading Preview...
+				{:else}
+					👁️ Preview Mode
+				{/if}
+			</button>
+			<button
+				class="btn btn-secondary"
+				onclick={getSmartRecommendations}
+				disabled={scanning || cleaning}
+			>
+				{#if scanning}
+					<LoadingSpinner size="sm" />
+					Analyzing...
+				{:else}
+					🔄 Refresh Analysis
+				{/if}
+			</button>
+		</div>
 	</div>
 
 	<!-- Progress Indicator -->
@@ -784,5 +802,12 @@
 			<h3 class="text-lg font-semibold mb-2">No Cleanup Opportunities Found</h3>
 			<p class="text-muted">Your system appears to be well-maintained. Click refresh to re-analyze.</p>
 		</div>
+	{/if}
+
+	{#if previewData}
+		<PreviewDialog
+			preview={previewData}
+			onConfirm={handlePreviewConfirm}
+		/>
 	{/if}
 </div>

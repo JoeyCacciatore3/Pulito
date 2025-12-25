@@ -9,6 +9,7 @@
 	import SmartCleanup from '$lib/components/SmartCleanup.svelte';
 	import EnhancedTreeView from '$lib/components/EnhancedTreeView.svelte';
 	import FilesystemHealth from '$lib/components/FilesystemHealth.svelte';
+	import StartupManager from '$lib/components/StartupManager.svelte';
 	import TrashView from '$lib/components/TrashView.svelte';
 	import Settings from '$lib/components/Settings.svelte';
 	import { invoke, isTauri } from '$lib/utils/tauri';
@@ -67,6 +68,8 @@
 				<EnhancedTreeView />
 			{:else if navigation.view === 'filesystem-health'}
 				<FilesystemHealth />
+			{:else if navigation.view === 'startup'}
+				<StartupManager />
 			{:else if navigation.view === 'trash'}
 				<TrashView />
 			{:else if navigation.view === 'settings'}
