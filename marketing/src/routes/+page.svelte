@@ -84,9 +84,9 @@
 			<a href="{base}/" class="flex items-center gap-3 text-xl font-bold text-[var(--color-text)] group">
 				<div class="relative">
 					<img
-						src="/assets/pulitologo.png"
+						src="/Pulito/assets/pulitologo.png"
 						alt="Pulito Logo"
-						class="w-8 h-8 transition-transform duration-300 group-hover:scale-110"
+						class="w-10 h-10 transition-transform duration-300 group-hover:scale-110"
 					/>
 					<div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-lg blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 				</div>
@@ -154,7 +154,7 @@
 				<!-- Left: Content -->
 				<div class="text-center md:text-left">
 					<div class="inline-flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 rounded-full px-4 py-2 mb-6 text-sm font-medium">
-						<img src="/assets/pllogo.png" alt="Pulito" class="w-4 h-4" />
+						<img src="/Pulito/assets/pllogo.png" alt="Pulito" class="w-4 h-4" />
 						<span class="text-gray-700 dark:text-gray-300">Smart Linux System Cleanup</span>
 					</div>
 
@@ -214,9 +214,9 @@
 							<div class="flex justify-center mb-6">
 								<div class="relative">
 									<img
-										src="/assets/pulitomatrix.png"
+										src="/Pulito/assets/pulitomatrix.png"
 										alt="Pulito Matrix Interface"
-										class="w-16 h-16 rounded-xl shadow-lg"
+										class="w-20 h-20 rounded-xl shadow-lg object-cover"
 									/>
 									<div class="absolute inset-0 bg-gradient-to-r from-blue-500/20 to-purple-500/20 rounded-xl blur-lg"></div>
 								</div>
@@ -276,7 +276,7 @@
 		<div class="container mx-auto max-w-6xl relative z-10">
 			<div class="text-center mb-12 md:mb-16">
 				<div class="inline-flex items-center gap-2 bg-white/60 dark:bg-gray-800/60 backdrop-blur-sm border border-white/20 dark:border-gray-700/50 rounded-full px-4 py-2 mb-6 text-sm font-medium">
-					<img src="/assets/pulitocande.png" alt="Pulito Features" class="w-4 h-4 rounded-full" />
+					<img src="/Pulito/assets/pulitocande.png" alt="Pulito Features" class="w-4 h-4 rounded-full" />
 					<span class="text-gray-700 dark:text-gray-300">Advanced Capabilities</span>
 				</div>
 
@@ -365,7 +365,7 @@
 
 		<div class="container mx-auto max-w-4xl text-center relative z-10">
 			<div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm border border-white/30 rounded-full px-4 py-2 mb-6 text-sm font-medium text-white">
-				<img src="/assets/pllogo.png" alt="Pulito" class="w-4 h-4 brightness-0 invert" />
+				<img src="/Pulito/assets/pllogo.png" alt="Pulito" class="w-4 h-4 brightness-0 invert" />
 				<span>Free & Open Source</span>
 			</div>
 
@@ -383,7 +383,7 @@
 					<div class="absolute inset-0 bg-gradient-to-r from-blue-50 to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-xl"></div>
 					<span class="relative flex items-center gap-2">
 						🚀 Download Free
-						<img src="/assets/pulitologo.png" alt="" class="w-5 h-5 opacity-70" />
+						<img src="/Pulito/assets/pulitologo.png" alt="" class="w-5 h-5 opacity-70" />
 					</span>
 				</button>
 
@@ -406,7 +406,7 @@
 			<div class="grid md:grid-cols-4 gap-8 mb-8">
 				<div class="md:col-span-2">
 					<div class="flex items-center gap-3 mb-4">
-						<img src="/assets/pulitomatrix.png" alt="Pulito Logo" class="w-8 h-8 rounded-lg" />
+						<img src="/Pulito/assets/pulitomatrix.png" alt="Pulito Logo" class="w-10 h-10 rounded-lg object-cover" />
 						<h3 class="font-semibold text-lg text-[var(--color-text)]">Pulito</h3>
 					</div>
 					<p class="text-sm text-[var(--color-text-secondary)] mb-4 max-w-sm">
