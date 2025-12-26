@@ -4,6 +4,7 @@
 	import { confirmation } from '$lib/stores/confirmation.svelte';
 	import { getStatusColor, getStatusIcon } from '$lib/utils/color-utils';
 	import { notifyCleanupSuccess, notifyOperationError, notifyPartialSuccess } from '$lib/utils/notification-helpers';
+	import { notificationStore } from '$lib/stores/notifications.svelte';
 	import { logger } from '$lib/utils/logger';
 	import LoadingSpinner from '$lib/components/ui/LoadingSpinner.svelte';
 	import ProgressBar from '$lib/components/ui/ProgressBar.svelte';
@@ -60,9 +61,11 @@
 
 	async function handleSliderChange() {
 		try {
-			oldFiles = await invoke<OldFilesSummary>('get_old_files_summary', { daysCutoff: sliderValue });
+			// 30-second timeout matches other old files calls
+			oldFiles = await invoke<OldFilesSummary>('get_old_files_summary', { daysCutoff: sliderValue }, 30000);
 		} catch (e) {
 			logger.error('Failed to update old files summary', { component: 'DiskPulse', action: 'update_old_files_summary' }, e);
+			notificationStore.warning('Update Failed', 'Could not update old files summary. Please try again.');
 		}
 	}
 
@@ -158,22 +161,28 @@
 
 
 	// Auto-refresh data every 30 seconds and start background monitoring
-	(onMount as any)(async () => {
-		// Start background monitoring for cache events and file access tracking
-		try {
-			await invoke('start_diskpulse_monitoring');
-			logger.info('DiskPulse background monitoring started', { component: 'DiskPulse', action: 'start_monitoring' });
-		} catch (e) {
-			logger.error('Failed to start background monitoring', { component: 'DiskPulse', action: 'start_monitoring', operation: 'start_background_monitoring' }, e);
-		}
+	onMount(() => {
+		let interval: ReturnType<typeof setInterval>;
 
-		loadDiskPulseData();
+		(async () => {
+			// Start background monitoring for cache events and file access tracking
+			try {
+				await invoke('start_diskpulse_monitoring');
+				logger.info('DiskPulse background monitoring started', { component: 'DiskPulse', action: 'start_monitoring' });
+			} catch (e) {
+				logger.error('Failed to start background monitoring', { component: 'DiskPulse', action: 'start_monitoring', operation: 'start_background_monitoring' }, e);
+			}
 
-		const interval = setInterval(() => {
 			loadDiskPulseData();
-		}, 30000);
 
-		return () => clearInterval(interval);
+			interval = setInterval(() => {
+				loadDiskPulseData();
+			}, 30000);
+		})();
+
+		return () => {
+			if (interval) clearInterval(interval);
+		};
 	});
 
 	// Watch slider changes

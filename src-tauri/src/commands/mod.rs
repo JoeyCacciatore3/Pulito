@@ -1,8 +1,9 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use sysinfo::Disks;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::path::{Path, PathBuf};
+use std::time::Instant;
 use tokio::sync::Mutex as AsyncMutex;
 use tokio::time::{timeout, Duration};
 use notify::Watcher;
@@ -290,8 +291,6 @@ pub struct TreeNode {
     pub selected: bool,  // Frontend state, default false
     #[serde(rename = "riskLevel")]
     pub risk_level: String,  // "safe" | "caution" | "warning"
-    #[serde(rename = "aiInsight", skip_serializing_if = "Option::is_none")]
-    pub ai_insight: Option<String>,
     #[serde(rename = "usagePattern", skip_serializing_if = "Option::is_none")]
     pub usage_pattern: Option<String>,
 }
@@ -619,18 +618,43 @@ fn get_battery_info_safely() -> Option<BatteryInfo> {
     }
 }
 
+// State tracking for network speed calculation (per-second rates)
+struct NetworkState {
+    last_transmitted: u64,
+    last_received: u64,
+    last_update: Instant,
+}
+
+static NETWORK_STATE: Mutex<Option<NetworkState>> = Mutex::new(None);
+
+// State tracking for disk I/O calculation (per-second rates)
+struct DiskIOState {
+    last_read_bytes: u64,
+    last_write_bytes: u64,
+    last_read_ops: u64,
+    last_write_ops: u64,
+    last_update: Instant,
+}
+
+static DISK_IO_STATE: Mutex<Option<DiskIOState>> = Mutex::new(None);
 
 fn get_gpu_info_from_components(components: &sysinfo::Components) -> Option<GpuInfo> {
     components.iter()
         .find(|c| c.label().to_lowercase().contains("gpu") ||
                  c.label().to_lowercase().contains("graphics"))
-        .map(|gpu_comp| {
-            GpuInfo {
-                name: gpu_comp.label().to_string(),
-                usage: 0.0, // Not available from components
-                memory_used: 0, // Not available from components
-                memory_total: 0, // Not available from components
-                temperature: gpu_comp.temperature(),
+        .and_then(|gpu_comp| {
+            // Only return if we have temperature data (meaningful information)
+            // Don't return placeholder zeros for usage/memory
+            if let Some(temp) = gpu_comp.temperature() {
+                Some(GpuInfo {
+                    name: gpu_comp.label().to_string(),
+                    usage: 0.0, // Not available from components - will be handled by frontend
+                    memory_used: 0,
+                    memory_total: 0,
+                    temperature: Some(temp),
+                })
+            } else {
+                None // No meaningful GPU data available
             }
         })
 }
@@ -664,15 +688,15 @@ pub async fn get_system_health() -> Result<SystemHealthData, String> {
     let swap_total = sys.total_swap();
     let swap_used = sys.used_swap();
 
-    // Network data (enhanced)
+    // Network data (enhanced) - calculate per-second rates
     let networks = Networks::new_with_refreshed_list();
-    let mut network_up: u64 = 0;
-    let mut network_down: u64 = 0;
+    let mut current_transmitted = 0u64;
+    let mut current_received = 0u64;
     let mut network_interfaces = Vec::new();
 
     for (interface_name, data) in &networks {
-        network_up += data.transmitted();
-        network_down += data.received();
+        current_transmitted += data.total_transmitted();
+        current_received += data.total_received();
         network_interfaces.push(NetworkInterfaceInfo {
             name: interface_name.clone(),
             received: data.total_received(),
@@ -684,11 +708,46 @@ pub async fn get_system_health() -> Result<SystemHealthData, String> {
         });
     }
 
+    // Calculate per-second rates using state tracking
+    let mut network_up: u64 = 0;
+    let mut network_down: u64 = 0;
+
+    let mut network_state_guard = NETWORK_STATE.lock().unwrap();
+    let now = Instant::now();
+
+    if let Some(ref mut state) = *network_state_guard {
+        let elapsed = now.duration_since(state.last_update).as_secs_f64();
+
+        // Only calculate if we have a valid time interval (between 0.1 and 10 seconds)
+        if elapsed >= 0.1 && elapsed <= 10.0 {
+            // Calculate bytes per second (handle potential counter wraparound)
+            if current_transmitted >= state.last_transmitted {
+                network_up = ((current_transmitted - state.last_transmitted) as f64 / elapsed) as u64;
+            }
+            if current_received >= state.last_received {
+                network_down = ((current_received - state.last_received) as f64 / elapsed) as u64;
+            }
+        }
+
+        // Update state
+        state.last_transmitted = current_transmitted;
+        state.last_received = current_received;
+        state.last_update = now;
+    } else {
+        // First run - initialize state but return 0 for rates (need second measurement)
+        *network_state_guard = Some(NetworkState {
+            last_transmitted: current_transmitted,
+            last_received: current_received,
+            last_update: now,
+        });
+        // network_up and network_down remain 0 on first call
+    }
+
     // Network connections
     let active_connections = get_network_connections();
 
-    // Disk I/O data (enhanced)
-    let (disk_read_bytes, disk_write_bytes, disk_read_ops, disk_write_ops) = {
+    // Disk I/O data (enhanced) - calculate per-second rates
+    let (current_read_bytes, current_write_bytes, current_read_ops, current_write_ops) = {
         #[cfg(target_os = "linux")]
         {
             get_disk_io_stats_linux()
@@ -708,6 +767,48 @@ pub async fn get_system_health() -> Result<SystemHealthData, String> {
             (0, 0, 0, 0)
         }
     };
+
+    // Calculate per-second rates using state tracking
+    let mut disk_read_bytes: u64 = 0;
+    let mut disk_write_bytes: u64 = 0;
+    let mut disk_read_ops: u64 = 0;
+    let mut disk_write_ops: u64 = 0;
+
+    let mut disk_state_guard = DISK_IO_STATE.lock().unwrap();
+    let now = Instant::now();
+
+    if let Some(ref mut state) = *disk_state_guard {
+        let elapsed = now.duration_since(state.last_update).as_secs_f64();
+
+        if elapsed >= 0.1 && elapsed <= 10.0 {
+            if current_read_bytes >= state.last_read_bytes {
+                disk_read_bytes = ((current_read_bytes - state.last_read_bytes) as f64 / elapsed) as u64;
+            }
+            if current_write_bytes >= state.last_write_bytes {
+                disk_write_bytes = ((current_write_bytes - state.last_write_bytes) as f64 / elapsed) as u64;
+            }
+            if current_read_ops >= state.last_read_ops {
+                disk_read_ops = ((current_read_ops - state.last_read_ops) as f64 / elapsed) as u64;
+            }
+            if current_write_ops >= state.last_write_ops {
+                disk_write_ops = ((current_write_ops - state.last_write_ops) as f64 / elapsed) as u64;
+            }
+        }
+
+        state.last_read_bytes = current_read_bytes;
+        state.last_write_bytes = current_write_bytes;
+        state.last_read_ops = current_read_ops;
+        state.last_write_ops = current_write_ops;
+        state.last_update = now;
+    } else {
+        *disk_state_guard = Some(DiskIOState {
+            last_read_bytes: current_read_bytes,
+            last_write_bytes: current_write_bytes,
+            last_read_ops: current_read_ops,
+            last_write_ops: current_write_ops,
+            last_update: now,
+        });
+    }
 
     // Function to read CPU temperature from lm-sensors
     fn get_cpu_temperature_from_sensors() -> Option<f32> {
@@ -902,10 +1003,7 @@ pub async fn get_system_health() -> Result<SystemHealthData, String> {
         }
     };
 
-    // Network interfaces
-    // NOTE: Network interface monitoring is deferred - current implementation returns empty vec
-    // Future enhancement: Implement per-interface monitoring using sysinfo or platform-specific APIs
-    let network_interfaces: Vec<NetworkInterfaceInfo> = Vec::new();
+    // Network interfaces are already populated in the loop above (lines 674-682)
 
     // Battery information (for laptops)
     // NOTE: Battery monitoring has been removed due to security vulnerability
@@ -916,7 +1014,7 @@ pub async fn get_system_health() -> Result<SystemHealthData, String> {
 
     let temperatures = Temperatures {
         cpu: cpu_temp_final,  // Primary: sensors first, thermal zone fallback
-        cpu_sensors: cpu_sensors_temp.unwrap_or(0.0),  // Keep for backward compatibility
+        cpu_sensors: cpu_sensors_temp.unwrap_or(0.0),
         system: system_temp,
         gpu: gpu_temp,
     };
@@ -1298,7 +1396,6 @@ fn scan_filesystem_tree_recursive(
             expanded: false,
             selected: false,
             risk_level,
-            ai_insight: None,
             usage_pattern: None,
         };
 
@@ -1400,7 +1497,6 @@ fn scan_directory_recursive(
             expanded: false,
             selected: false,
             risk_level,
-            ai_insight: None,
             usage_pattern: None,
         };
 

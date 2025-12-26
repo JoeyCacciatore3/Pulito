@@ -148,6 +148,14 @@ class IPCManager {
 				})
 				.catch(error => {
 					clearTimeout(timeoutId);
+					// Log the raw error for debugging
+					console.error(`[IPC] Raw error from tauriInvoke for command '${cmd}':`, error);
+					console.error(`[IPC] Error type:`, typeof error);
+					console.error(`[IPC] Error constructor:`, error?.constructor?.name);
+					if (error && typeof error === 'object') {
+						console.error(`[IPC] Error keys:`, Object.keys(error));
+						console.error(`[IPC] Error stringified:`, JSON.stringify(error, null, 2));
+					}
 					reject(error);
 				});
 		});
@@ -174,14 +182,75 @@ class IPCManager {
 			// Final failure
 			this.retryAttempts.delete(request.id);
 
-			// Enhanced error reporting
+			// Extract error message based on Tauri 2.x error format
+			// Tauri 2.x Result<T, String> errors are serialized as strings and thrown as exceptions
+			let errorMessage = 'Unknown IPC error';
+
+			// Handle null/undefined
+			if (error === null || error === undefined) {
+				errorMessage = `Command '${request.cmd}' failed with null/undefined error`;
+			}
+			// Priority 1: Direct string (Tauri 2.x Result<T, String> format)
+			else if (typeof error === 'string') {
+				errorMessage = error;
+			}
+			// Priority 2: Error instance
+			else if (error instanceof Error) {
+				errorMessage = error.message || error.toString();
+			}
+			// Priority 3: Object with message property
+			else if (error && typeof error === 'object') {
+				const errObj = error as {
+					message?: string;
+					toString?: () => string;
+					// Tauri might wrap errors in objects
+					[key: string]: unknown;
+				};
+
+				// Try message property first
+				if (errObj.message && typeof errObj.message === 'string') {
+					errorMessage = errObj.message;
+				}
+				// Try toString method
+				else if (errObj.toString && typeof errObj.toString === 'function') {
+					try {
+						errorMessage = errObj.toString();
+					} catch {
+						// toString failed, try JSON
+						errorMessage = JSON.stringify(error);
+					}
+				}
+				// Try to find any string property
+				else {
+					for (const key in errObj) {
+						if (typeof errObj[key] === 'string' && errObj[key]) {
+							errorMessage = errObj[key] as string;
+							break;
+						}
+					}
+					// Last resort: JSON stringify
+					if (errorMessage === 'Unknown IPC error') {
+						try {
+							errorMessage = JSON.stringify(error);
+						} catch {
+							errorMessage = String(error);
+						}
+					}
+				}
+			}
+			// Priority 4: Convert to string
+			else {
+				errorMessage = String(error);
+			}
+
+			// Enhanced error reporting - preserve original error for debugging
 			const enhancedError = {
 				originalError: error,
 				command: request.cmd,
 				args: request.args,
 				attempts: request.attempts,
 				timestamp: new Date().toISOString(),
-				message: error instanceof Error ? error.message : 'Unknown IPC error'
+				message: errorMessage
 			};
 
 			reject(enhancedError);
@@ -192,7 +261,18 @@ class IPCManager {
 	 * Determine if an error is retryable
 	 */
 	private isRetryableError(error: unknown): boolean {
-		const message = error instanceof Error ? error.message : String(error);
+		// Extract error message
+		let message = '';
+		if (typeof error === 'string') {
+			message = error;
+		} else if (error instanceof Error) {
+			message = error.message;
+		} else if (error && typeof error === 'object') {
+			const errObj = error as { message?: string; toString?: () => string };
+			message = errObj.message || errObj.toString?.() || String(error);
+		} else {
+			message = String(error);
+		}
 
 		// Retry on network-like errors, timeouts, but not on permission errors
 		const retryablePatterns = [
@@ -315,7 +395,6 @@ export function isTauri(): boolean {
 
 	/**
 	 * Enhanced invoke wrapper using IPCManager with queuing, batching, and retry mechanisms
-	 * Maintains backward compatibility with existing code
 	 */
 	export async function invoke<T = unknown>(
 		cmd: string,
@@ -334,7 +413,7 @@ export function isTauri(): boolean {
 		throw error;
 	}
 
-	// Handle backward compatibility (timeout as number)
+	// Handle timeout parameter (number or options object)
 	let options: IPCOptions;
 	if (typeof timeoutOrOptions === 'number') {
 		options = { timeout: timeoutOrOptions };

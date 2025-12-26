@@ -79,7 +79,7 @@ export const navigation = {
 
 **Types:**
 ```typescript
-type View = 'dashboard' | 'filesystem' | 'storage' | 'cache' | 'diskpulse' | 'trash' | 'settings';
+type View = 'dashboard' | 'cleanup' | 'treeview' | 'filesystem-health' | 'trash' | 'settings' | 'startup' | 'system-health' | 'disk-pulse' | 'storage-recovery';
 ```
 
 **Usage:**
@@ -87,7 +87,7 @@ type View = 'dashboard' | 'filesystem' | 'storage' | 'cache' | 'diskpulse' | 'tr
 import { navigation } from '$lib/stores/navigation.svelte';
 
 // Navigate to a view
-navigation.navigate('filesystem');
+navigation.set('filesystem-health');
 
 // Check current view
 if (navigation.activeView === 'dashboard') {
@@ -357,6 +357,143 @@ theme.apply();
 
 ---
 
+### metrics-history.svelte.ts
+
+Historical metrics store for time-series data tracking.
+
+**Location:** `src/lib/stores/metrics-history.svelte.ts`
+
+**Purpose:**
+Stores time-series data for CPU, memory, network, temperature, and disk I/O metrics. Used by SystemHealthMonitor for historical trend visualization.
+
+**API:**
+```typescript
+// Add data points
+export function addCPUData(data: Omit<CPUDataPoint, 'timestamp'>): void;
+export function addMemoryData(data: Omit<MemoryDataPoint, 'timestamp'>): void;
+export function addNetworkData(data: Omit<NetworkDataPoint, 'timestamp'>): void;
+export function addTemperatureData(data: Omit<TemperatureDataPoint, 'timestamp'>): void;
+export function addDiskIOData(data: Omit<DiskIODataPoint, 'timestamp'>): void;
+
+// Get history (filtered by time range)
+export function getCPUHistory(range?: '1h' | '6h' | '24h' | 'all'): CPUDataPoint[];
+export function getMemoryHistory(range?: '1h' | '6h' | '24h' | 'all'): MemoryDataPoint[];
+export function getNetworkHistory(range?: '1h' | '6h' | '24h' | 'all'): NetworkDataPoint[];
+export function getTemperatureHistory(range?: '1h' | '6h' | '24h' | 'all'): TemperatureDataPoint[];
+export function getDiskIOHistory(range?: '1h' | '6h' | '24h' | 'all'): DiskIODataPoint[];
+
+// Reactive getters (for use in components)
+export function getCPUHistoryReactive(range?: '1h' | '6h' | '24h' | 'all'): CPUDataPoint[];
+export function getMemoryHistoryReactive(range?: '1h' | '6h' | '24h' | 'all'): MemoryDataPoint[];
+export function getNetworkHistoryReactive(range?: '1h' | '6h' | '24h' | 'all'): NetworkDataPoint[];
+export function getTemperatureHistoryReactive(range?: '1h' | '6h' | '24h' | 'all'): TemperatureDataPoint[];
+export function getDiskIOHistoryReactive(range?: '1h' | '6h' | '24h' | 'all'): DiskIODataPoint[];
+
+// Utility functions
+export function clearHistory(): void;
+export function getLatestData(): {
+  cpu: CPUDataPoint | null;
+  memory: MemoryDataPoint | null;
+  network: NetworkDataPoint | null;
+  temperature: TemperatureDataPoint | null;
+  diskIO: DiskIODataPoint | null;
+};
+```
+
+**Types:**
+```typescript
+interface CPUDataPoint {
+  timestamp: number;
+  usage: number;
+  coreUsages?: number[];
+}
+
+interface MemoryDataPoint {
+  timestamp: number;
+  usedMemory: number;
+  totalMemory: number;
+  swapUsed?: number;
+  swapTotal?: number;
+  cache?: number;
+}
+
+interface NetworkDataPoint {
+  timestamp: number;
+  upload: number;
+  download: number;
+}
+
+interface TemperatureDataPoint {
+  timestamp: number;
+  cpu: number;
+  gpu?: number;
+  system: number;
+}
+
+interface DiskIODataPoint {
+  timestamp: number;
+  readBytes: number;
+  writeBytes: number;
+  readOps?: number;
+  writeOps?: number;
+}
+```
+
+**Data Retention:**
+- Maximum retention: 24 hours
+- Maximum points per metric: 500
+- Automatic pruning of old data
+- Automatic limiting when max points exceeded
+
+**Usage:**
+```typescript
+import {
+  addCPUData,
+  getCPUHistory,
+  getLatestData,
+  clearHistory
+} from '$lib/stores/metrics-history.svelte';
+
+// Add a data point
+addCPUData({
+  usage: 45.5,
+  coreUsages: [40, 50, 45, 47]
+});
+
+// Get history (last hour)
+const cpuHistory = getCPUHistory('1h');
+
+// Get latest data
+const latest = getLatestData();
+console.log(latest.cpu?.usage);
+
+// Clear all history
+clearHistory();
+```
+
+**Usage in Components:**
+```typescript
+// In SystemHealthMonitor component
+import { getCPUHistoryReactive } from '$lib/stores/metrics-history.svelte';
+
+// Use in $derived for reactivity
+let cpuHistory = $derived(getCPUHistoryReactive('1h'));
+```
+
+**State:**
+- Internal state managed by store (not directly accessible)
+- Data points automatically timestamped on add
+- Automatic pruning based on retention and max points
+- Thread-safe (single-threaded JavaScript)
+
+**Notes:**
+- Timestamps are in milliseconds (Date.now())
+- Data is stored in memory (not persisted)
+- History is cleared on app restart
+- Used primarily by SystemHealthMonitor for chart data
+
+---
+
 ## Store Interaction Patterns
 
 ### Component-Specific Stores
@@ -394,6 +531,7 @@ theme.current = 'dark'; // Sync theme store
 - **Navigation**: In-memory only (based on route)
 - **Notifications**: In-memory only (temporary)
 - **Confirmation**: In-memory only (modal state)
+- **Metrics History**: In-memory only (24-hour retention, max 500 points per metric)
 
 ## Reactive Updates
 

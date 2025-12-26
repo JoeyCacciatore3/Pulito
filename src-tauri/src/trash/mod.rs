@@ -204,7 +204,7 @@ pub fn cleanup_expired() -> Result<usize, String> {
     let mut remaining = Vec::new();
 
     for item in items {
-        let expires: DateTime<Utc> = item.expires_at.parse().unwrap_or(now);
+    let expires: DateTime<Utc> = item.expires_at.parse().unwrap_or(now);
 
         if expires <= now {
             let trash_path = PathBuf::from(&item.trash_path);

@@ -5,6 +5,11 @@
 	import { logger } from '$lib/utils/logger';
 	import LoadingSpinner from './ui/LoadingSpinner.svelte';
 	import TreeNode from './TreeNode.svelte';
+	import TreemapView from './TreemapView.svelte';
+	import TreemapLegend from './TreemapLegend.svelte';
+	import TreemapStatsPanel from './TreemapStatsPanel.svelte';
+	import SizeBar from './ui/SizeBar.svelte';
+	import type { TreeNode as GeneratedTreeNode } from '$lib/generated/types';
 
 	interface TreeNode {
 		id: string;
@@ -37,6 +42,21 @@
 	let viewMode = $state<'tree' | 'list' | 'treemap'>('tree');
 	let sortBy = $state<'name' | 'size' | 'date' | 'risk'>('size');
 	let sortOrder = $state<'asc' | 'desc'>('desc');
+	let treemapColorMode = $state<'size' | 'risk' | 'usage' | 'filetype'>('size');
+	let isFullscreen = $state(false);
+	let selectedNodeIds = $derived(() => {
+		const ids = new Set<string>();
+		function collectSelected(node: TreeNode) {
+			if (node.selected) {
+				ids.add(node.id);
+			}
+			if (node.children) {
+				node.children.forEach(collectSelected);
+			}
+		}
+		treeData.forEach(collectSelected);
+		return ids;
+	});
 
 	let options = $state<TreeViewOptions>({
 		rootPath: '~',
@@ -70,17 +90,45 @@
 		selectedSize: 0
 	});
 
+	// Extract error message from various error types
+	function extractErrorMessage(error: unknown): string {
+		if (typeof error === 'string') {
+			return error;
+		}
+		if (error instanceof Error) {
+			return error.message;
+		}
+		if (error && typeof error === 'object') {
+			const errObj = error as { message?: string; originalError?: unknown };
+			if (errObj.message) return errObj.message;
+			if (errObj.originalError) {
+				if (typeof errObj.originalError === 'string') {
+					return errObj.originalError;
+				}
+				if (errObj.originalError instanceof Error) {
+					return errObj.originalError.message;
+				}
+			}
+			try {
+				return JSON.stringify(error);
+			} catch {
+				return String(error);
+			}
+		}
+		return 'Unknown error occurred';
+	}
+
 	async function loadTreeData() {
 		try {
 			loading = true;
 			console.log('Loading tree data with options:', options);
 
 			const data = await invoke<TreeNode[]>('scan_filesystem_tree', {
-				root_path: options.rootPath,
-				max_depth: options.maxDepth,
-				include_hidden: options.includeHidden,
-				size_threshold: options.sizeThreshold,
-				filter_patterns: options.filterPatterns
+				rootPath: options.rootPath,
+				maxDepth: options.maxDepth,
+				includeHidden: options.includeHidden,
+				sizeThreshold: options.sizeThreshold,
+				filterPatterns: options.filterPatterns
 			});
 
 			// Enhance data with AI insights
@@ -93,7 +141,8 @@
 		} catch (error) {
 			console.error('Failed to load tree data:', error);
 			logger.error('Failed to load tree data', { component: 'EnhancedTreeView', options }, error);
-			notificationStore.error('Tree Load Failed', `Could not load file tree structure: ${error}`);
+			const errorMessage = extractErrorMessage(error);
+			notificationStore.error('Tree Load Failed', `Could not load file tree structure: ${errorMessage}`);
 		} finally {
 			loading = false;
 		}
@@ -102,7 +151,9 @@
 	async function enhanceWithAIInsights(nodes: TreeNode[]): Promise<TreeNode[]> {
 		// Simulate AI analysis (in real implementation, this would call an AI service)
 		return nodes.map(node => {
-			const daysSinceAccess = (Date.now() - node.lastAccessed) / (1000 * 60 * 60 * 24);
+			// Convert Unix timestamp (seconds) to milliseconds for Date calculations
+			const lastAccessedMs = node.lastAccessed * 1000;
+			const daysSinceAccess = (Date.now() - lastAccessedMs) / (1000 * 60 * 60 * 24);
 
 			let insight = '';
 			let usagePattern: TreeNode['usagePattern'] = 'occasional';
@@ -249,11 +300,11 @@
 
 	function getUsageColor(pattern: string): string {
 		switch (pattern) {
-			case 'frequent': return 'bg-green-100';
-			case 'occasional': return 'bg-blue-100';
-			case 'rare': return 'bg-yellow-100';
-			case 'never': return 'bg-red-100';
-			default: return 'bg-gray-100';
+			case 'frequent': return 'bg-green-100 dark:bg-green-900/30';
+			case 'occasional': return 'bg-blue-100 dark:bg-blue-900/30';
+			case 'rare': return 'bg-yellow-100 dark:bg-yellow-900/30';
+			case 'never': return 'bg-red-100 dark:bg-red-900/30';
+			default: return 'bg-gray-100 dark:bg-gray-900/30';
 		}
 	}
 
@@ -326,7 +377,7 @@
 	</div>
 
 	<!-- Statistics Bar -->
-	<div class="card p-4 bg-gradient-to-r from-blue-50 to-indigo-50">
+	<div class="card p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30">
 		<div class="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
 			<div>
 				<div class="font-medium">{stats.totalFiles.toLocaleString()}</div>
@@ -387,7 +438,7 @@
 					<!-- List View -->
 					<div class="space-y-2">
 						{#each getAllNodes(sortedNodes) as node}
-							<div class="flex items-center gap-3 p-2 hover:bg-gray-50 rounded">
+							<div class="flex items-center gap-3 p-2 hover:bg-gray-50 dark:hover:bg-gray-900/50 rounded">
 								<input
 									type="checkbox"
 									bind:checked={node.selected}
@@ -410,12 +461,76 @@
 							</div>
 						{/each}
 					</div>
-				{:else}
-					<!-- Treemap View (simplified) -->
-					<div class="text-center py-8">
-						<div class="text-4xl mb-4">📊</div>
-						<p class="text-muted">Treemap visualization coming soon</p>
-						<p class="text-xs text-muted mt-2">Shows file sizes as proportional rectangles</p>
+				{:else if viewMode === 'treemap'}
+					<!-- Treemap View -->
+					<div class="space-y-2 {isFullscreen ? 'fixed inset-0 z-50 bg-[var(--color-bg)] p-4' : ''}">
+						{#if isFullscreen}
+							<div class="flex items-center justify-between mb-4">
+								<h3 class="text-lg font-semibold">Treemap Visualization</h3>
+								<button
+									class="btn btn-secondary"
+									onclick={() => isFullscreen = false}
+									aria-label="Exit fullscreen"
+								>
+									✕ Close
+								</button>
+							</div>
+						{/if}
+						<div class="flex gap-4 {isFullscreen ? 'h-[calc(100vh-120px)]' : ''}">
+							<!-- Main Treemap Area -->
+							<div class="flex-1 flex flex-col {isFullscreen ? 'min-h-0' : 'min-h-[600px]'}">
+								<!-- Controls -->
+								<div class="flex items-center justify-between mb-2">
+									<div class="flex items-center gap-2">
+										<label for="color-mode-select" class="text-sm text-muted">Color by:</label>
+										<select
+											id="color-mode-select"
+											bind:value={treemapColorMode}
+											class="select text-sm"
+										>
+											<option value="size">Size</option>
+											<option value="risk">Risk Level</option>
+											<option value="usage">Usage Pattern</option>
+											<option value="filetype">File Type</option>
+										</select>
+									</div>
+									{#if !isFullscreen}
+										<button
+											class="btn btn-secondary text-sm"
+											onclick={() => isFullscreen = true}
+											aria-label="Enter fullscreen"
+										>
+											⛶ Fullscreen
+										</button>
+									{/if}
+								</div>
+								<!-- Treemap Container -->
+								<div class="flex-1 border border-[var(--color-border)] rounded-lg overflow-hidden bg-[var(--color-bg-secondary)]">
+									<TreemapView
+										nodes={sortedNodes as unknown as GeneratedTreeNode[]}
+										onNodeClick={(node) => toggleNodeSelection(node as unknown as TreeNode, !(node as unknown as TreeNode).selected)}
+										colorMode={treemapColorMode}
+										minNodeSize={8}
+										padding={2}
+									/>
+								</div>
+								<!-- Legend -->
+								<TreemapLegend
+									colorMode={treemapColorMode}
+									isDark={typeof document !== 'undefined' && document.documentElement.classList.contains('dark')}
+									totalSize={stats.totalSize}
+									collapsible={true}
+								/>
+							</div>
+							<!-- Statistics Panel -->
+							<div class="w-64 flex-shrink-0">
+								<TreemapStatsPanel
+									nodes={sortedNodes as unknown as GeneratedTreeNode[]}
+									selectedNodes={selectedNodeIds()}
+									collapsible={true}
+								/>
+							</div>
+						</div>
 					</div>
 				{/if}
 			</div>

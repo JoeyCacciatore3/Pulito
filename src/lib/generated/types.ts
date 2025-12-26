@@ -78,5 +78,5 @@ export type TrashMetadata = { category: string; risk_level: number; reason: stri
 
 export type TrashSettings = { retention_days: number; max_size_mb: number }
 
-export type TreeNode = { id: string; name: string; path: string; size: number; isDirectory: boolean; lastModified: number; lastAccessed: number; children?: TreeNode[] | undefined; expanded: boolean; selected: boolean; riskLevel: string; aiInsight?: string | undefined; usagePattern?: string | undefined }
+export type TreeNode = { id: string; name: string; path: string; size: number; isDirectory: boolean; lastModified: number; lastAccessed: number; children?: TreeNode[] | undefined; expanded: boolean; selected: boolean; riskLevel: string; usagePattern?: string | undefined }
 

@@ -26,22 +26,25 @@
 	let updateCount = $state(0);
 	let consecutiveErrors = $state(0);
 
-	// Update frequency in milliseconds
-	const UPDATE_INTERVAL = 2000;
+	// Update frequency in milliseconds (5 seconds for system load optimization)
+	const UPDATE_INTERVAL = 5000;
 
 	async function fetchHealthData() {
 		try {
-			updateCount++;
-			const startTime = Date.now();
-			const data = await invoke<SystemHealthData>('get_system_health');
-			const fetchTime = Date.now() - startTime;
+		updateCount++;
+		const startTime = Date.now();
+		// 30-second timeout matches backend timeout
+		const data = await invoke<SystemHealthData>('get_system_health', undefined, 30000);
+		const fetchTime = Date.now() - startTime;
 
 			healthData = data;
 			lastUpdate = Date.now();
 			consecutiveErrors = 0; // Reset error count on success
 
-			// Debug logging to verify real-time updates
+		// Only log in development to reduce overhead
+		if (import.meta.env.DEV) {
 			logger.debug(`System Health Update #${updateCount} (${fetchTime}ms): CPU ${data.cpu_usage.toFixed(1)}%, Memory ${(data.used_memory / 1024 / 1024 / 1024).toFixed(1)}GB, Temp ${data.temperatures.cpu.toFixed(1)}°C`);
+		}
 		} catch (e) {
 			consecutiveErrors++;
 			logger.error(`System Health Update #${updateCount} Failed`, { component: 'SystemHealthMonitor', action: 'update_health', updateCount, consecutiveErrors }, e);

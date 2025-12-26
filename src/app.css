@@ -68,11 +68,15 @@
 	}
 
 	.card {
-		@apply bg-[var(--color-bg)] border border-[var(--color-border)] rounded-xl shadow-sm;
+		@apply bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-xl shadow-sm;
 	}
 
 	.input {
-		@apply w-full px-3 py-2 text-sm bg-[var(--color-bg)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors;
+		@apply w-full px-3 py-2 text-sm bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors;
+	}
+
+	.select {
+		@apply px-3 py-2 text-sm bg-[var(--color-bg-secondary)] border border-[var(--color-border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors;
 	}
 
 	.badge {

@@ -1,6 +1,6 @@
 // Navigation store using Svelte 5 runes
 
-export type View = 'dashboard' | 'cleanup' | 'treeview' | 'filesystem-health' | 'trash' | 'settings' | 'startup';
+export type View = 'dashboard' | 'cleanup' | 'treeview' | 'filesystem-health' | 'trash' | 'settings' | 'startup' | 'system-health' | 'disk-pulse' | 'storage-recovery';
 
 let currentView = $state<View>('dashboard');
 

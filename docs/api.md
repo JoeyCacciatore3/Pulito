@@ -2,7 +2,7 @@
 
 ## Overview
 
-Pulito exposes 27 Tauri IPC commands for communication between the frontend (Svelte) and backend (Rust). All commands are async and return `Result<T, String>` for error handling.
+Pulito exposes 38 Tauri IPC commands for communication between the frontend (Svelte) and backend (Rust). All commands are async and return `Result<T, String>` for error handling.
 
 ## Type Definitions
 
@@ -37,13 +37,15 @@ The `invoke` wrapper provides:
 
 1. **Initialization** (1 command)
 2. **System Information** (2 commands)
-3. **Scanning Operations** (3 commands)
-4. **Cleanup Operations** (4 commands)
+3. **Scanning Operations** (5 commands)
+4. **Cleanup Operations** (6 commands)
 5. **Trash Management** (4 commands)
 6. **Settings Management** (2 commands)
-7. **DiskPulse Monitoring** (7 commands)
-8. **Cache Management** (3 commands)
-9. **Old Files Cleanup** (1 command)
+7. **Scheduling** (3 commands)
+8. **Startup Management** (2 commands)
+9. **DiskPulse Monitoring** (7 commands)
+10. **Cache Management** (3 commands)
+11. **Old Files Cleanup** (1 command)
 
 ## Command Reference
 
@@ -355,6 +357,104 @@ const results = await invoke<StorageRecoveryResults>('scan_storage_recovery', un
 
 ---
 
+#### `scan_filesystem_tree`
+
+Scans a filesystem path and returns a tree structure of files and directories.
+
+**Signature:**
+```rust
+pub async fn scan_filesystem_tree(
+    root_path: String,
+    max_depth: usize,
+    include_hidden: bool,
+    size_threshold: u64,
+    filter_patterns: Vec<String>,
+) -> Result<Vec<TreeNode>, String>
+```
+
+**Parameters:**
+```typescript
+{
+  root_path: string;        // Path to scan (use "~" for home directory)
+  max_depth: number;        // Maximum directory depth to scan
+  include_hidden: boolean;  // Include hidden files/directories
+  size_threshold: number;   // Minimum file size in bytes to include
+  filter_patterns: string[]; // File name patterns to filter
+}
+```
+
+**Return Type:** `TreeNode[]`
+
+```typescript
+interface TreeNode {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  isDirectory: boolean;
+  lastModified: number;
+  lastAccessed: number;
+  children?: TreeNode[];
+  expanded: boolean;
+  selected: boolean;
+  riskLevel: string;
+  usagePattern?: string;
+}
+```
+
+**Timeout:** 60 seconds
+
+**Description:**
+- Recursively scans filesystem starting from root_path
+- Builds hierarchical tree structure
+- Filters files by size and patterns
+- Respects max_depth limit
+- Used by EnhancedTreeView component for file browser
+
+**Usage:**
+```typescript
+const tree = await invoke<TreeNode[]>('scan_filesystem_tree', {
+  root_path: '~',
+  max_depth: 5,
+  include_hidden: false,
+  size_threshold: 1024,
+  filter_patterns: []
+}, 60000);
+```
+
+---
+
+#### `scan_for_old_files`
+
+Scans filesystem to populate file_access database table for old file detection.
+
+**Signature:**
+```rust
+pub async fn scan_for_old_files(app_handle: tauri::AppHandle) -> Result<ScanResults, String>
+```
+
+**Parameters:**
+- `app_handle`: Tauri AppHandle (injected automatically)
+
+**Return Type:** `ScanResults`
+
+**Timeout:** 10 minutes (600 seconds)
+
+**Description:**
+- Scans filesystem and populates file_access database table
+- Required before DiskPulse can detect unused files
+- Tracks file access times for old file detection
+- Currently temporarily disabled
+
+**Usage:**
+```typescript
+const results = await invoke<ScanResults>('scan_for_old_files', undefined, 600000);
+```
+
+**Note:** This command is currently disabled and returns an error. It will be re-enabled in a future update.
+
+---
+
 ### Cleanup Operations
 
 #### `clean_items`
@@ -506,6 +606,95 @@ pub async fn clear_logs() -> Result<CleanResult, String>
 **Usage:**
 ```typescript
 const result = await invoke<CleanResult>('clear_logs');
+```
+
+---
+
+#### `quick_clean_safe`
+
+Performs a quick cleanup of only safe items (cache and logs).
+
+**Signature:**
+```rust
+pub async fn quick_clean_safe(app_handle: tauri::AppHandle) -> Result<QuickCleanResult, String>
+```
+
+**Parameters:**
+- `app_handle`: Tauri AppHandle (injected automatically)
+
+**Return Type:** `QuickCleanResult`
+
+```typescript
+interface QuickCleanResult {
+  cleaned: number;
+  failed: number;
+  total_size: number;
+  categories: string[];
+  duration_ms: number;
+}
+```
+
+**Timeout:** 2 minutes (120 seconds)
+
+**Description:**
+- Cleans only risk level 0 items (cache and logs)
+- Safe operation with no user confirmation required
+- Returns cleanup results with categories cleaned
+- Used for automated scheduled cleanup
+
+**Usage:**
+```typescript
+const result = await invoke<QuickCleanResult>('quick_clean_safe', undefined, 120000);
+```
+
+---
+
+#### `get_cleanup_preview`
+
+Gets a preview of all cleanup opportunities without performing cleanup.
+
+**Signature:**
+```rust
+pub async fn get_cleanup_preview(app_handle: tauri::AppHandle) -> Result<CleanupPreview, String>
+```
+
+**Parameters:**
+- `app_handle`: Tauri AppHandle (injected automatically)
+
+**Return Type:** `CleanupPreview`
+
+```typescript
+interface CleanupPreview {
+  cache_items: PreviewItem[];
+  log_items: PreviewItem[];
+  filesystem_items: PreviewItem[];
+  storage_items: PreviewItem[];
+  total_size: number;
+  total_items: number;
+}
+
+interface PreviewItem {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  category: string;
+  risk_level: number;
+  description: string;
+}
+```
+
+**Timeout:** 3 minutes (180 seconds)
+
+**Description:**
+- Scans system for cleanup opportunities without cleaning
+- Returns preview of cache, log, filesystem, and storage items
+- Used by SmartCleanup component for preview mode
+- All items are read-only (no cleanup performed)
+
+**Usage:**
+```typescript
+const preview = await invoke<CleanupPreview>('get_cleanup_preview', undefined, 180000);
 ```
 
 ---
@@ -758,6 +947,227 @@ await invoke('save_settings', {
 
 ---
 
+### Scheduling
+
+#### `get_schedule_settings`
+
+Retrieves scheduled cleanup settings from database.
+
+**Signature:**
+```rust
+pub async fn get_schedule_settings(app_handle: tauri::AppHandle) -> Result<Option<SchedulingSettings>, String>
+```
+
+**Parameters:**
+- `app_handle`: Tauri AppHandle (injected automatically)
+
+**Return Type:** `SchedulingSettings | null`
+
+```typescript
+interface SchedulingSettings {
+  enabled: boolean;
+  frequency: string;        // "daily", "weekly", "on_startup"
+  time?: string;            // "HH:MM" format for daily/weekly
+  day_of_week?: number;     // 0-6 (0=Sunday) for weekly
+  last_run?: number;        // Unix timestamp
+  next_run?: number;        // Unix timestamp
+}
+```
+
+**Timeout:** 5 seconds
+
+**Description:**
+- Reads scheduling settings from database
+- Returns null if no settings exist
+- Used to check if scheduled cleanup is configured
+
+**Usage:**
+```typescript
+const settings = await invoke<SchedulingSettings | null>('get_schedule_settings', undefined, 5000);
+```
+
+---
+
+#### `save_schedule_settings`
+
+Saves scheduled cleanup settings to database and starts/stops scheduler.
+
+**Signature:**
+```rust
+pub async fn save_schedule_settings(
+    app_handle: tauri::AppHandle,
+    settings: SchedulingSettings,
+) -> Result<(), String>
+```
+
+**Parameters:**
+```typescript
+{
+  settings: SchedulingSettings
+}
+```
+
+**Return Type:** `Result<(), String>`
+
+**Timeout:** 5 seconds
+
+**Description:**
+- Saves scheduling settings to database
+- Starts scheduler if enabled
+- Stops scheduler if disabled
+- Updates next_run timestamp based on frequency
+
+**Usage:**
+```typescript
+await invoke('save_schedule_settings', {
+  settings: {
+    enabled: true,
+    frequency: 'daily',
+    time: '02:00',
+    day_of_week: undefined,
+    last_run: undefined,
+    next_run: undefined
+  }
+}, 5000);
+```
+
+---
+
+#### `get_schedule_status`
+
+Gets current status of scheduled cleanup.
+
+**Signature:**
+```rust
+pub async fn get_schedule_status(app_handle: tauri::AppHandle) -> Result<ScheduleStatus, String>
+```
+
+**Parameters:**
+- `app_handle`: Tauri AppHandle (injected automatically)
+
+**Return Type:** `ScheduleStatus`
+
+```typescript
+interface ScheduleStatus {
+  enabled: boolean;
+  next_run?: number;        // Unix timestamp
+  last_run?: number;        // Unix timestamp
+  status: string;          // "active", "paused", "never_run"
+}
+```
+
+**Timeout:** 5 seconds
+
+**Description:**
+- Returns current scheduler status
+- Shows next scheduled run time
+- Shows last run time
+- Indicates if scheduler is active, paused, or never run
+
+**Usage:**
+```typescript
+const status = await invoke<ScheduleStatus>('get_schedule_status', undefined, 5000);
+```
+
+---
+
+### Startup Management
+
+#### `get_startup_programs`
+
+Retrieves all startup programs from XDG autostart and systemd user services.
+
+**Signature:**
+```rust
+pub async fn get_startup_programs() -> Result<StartupProgramsList, String>
+```
+
+**Parameters:** None
+
+**Return Type:** `StartupProgramsList`
+
+```typescript
+interface StartupProgramsList {
+  programs: StartupProgram[];
+  total_count: number;
+  enabled_count: number;
+}
+
+interface StartupProgram {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  location: string;         // "xdg_autostart" or "systemd_user"
+  file_path: string;
+  impact: string;          // "low", "medium", "high"
+  exec_command?: string;
+}
+```
+
+**Timeout:** 10 seconds
+
+**Description:**
+- Scans XDG autostart directory (~/.config/autostart)
+- Scans systemd user services (~/.config/systemd/user)
+- Parses .desktop and .service files
+- Determines enabled status based on desktop environment
+- Returns list of all startup programs
+
+**Usage:**
+```typescript
+const programs = await invoke<StartupProgramsList>('get_startup_programs', undefined, 10000);
+```
+
+---
+
+#### `toggle_startup_program`
+
+Enables or disables a startup program.
+
+**Signature:**
+```rust
+pub async fn toggle_startup_program(
+    id: String,
+    enabled: bool,
+) -> Result<(), String>
+```
+
+**Parameters:**
+```typescript
+{
+  id: string;      // Program ID from get_startup_programs
+  enabled: boolean; // true to enable, false to disable
+}
+```
+
+**Return Type:** `Result<(), String>`
+
+**Timeout:** 5 seconds
+
+**Description:**
+- Enables or disables a startup program
+- For XDG autostart: modifies .desktop file Hidden/NoDisplay fields
+- For systemd services: uses systemctl enable/disable
+- Validates paths for security
+- Requires program to exist in startup programs list
+
+**Usage:**
+```typescript
+await invoke('toggle_startup_program', {
+  id: 'xdg_my_program',
+  enabled: false
+}, 5000);
+```
+
+**Errors:**
+- "Program not found" - ID doesn't match any startup program
+- "Security validation failed" - Path validation failed
+- "Failed to modify desktop file" - File write error
+- "systemctl command failed" - Systemd command error
+
+---
+
 ### DiskPulse Monitoring
 
 #### `start_diskpulse_monitoring`
@@ -995,12 +1405,20 @@ pub async fn cleanup_old_files(app_handle: tauri::AppHandle, days_cutoff: u32) -
 
 **Description:**
 - Finds files older than cutoff days in file_access table
-- Moves them to trash
-- Returns cleanup results
+- Validates all paths before deletion
+- Moves files to trash (recoverable)
+- Returns cleanup results with counts and total size
+- Used by DiskPulse component for old files cleanup
 
 **Usage:**
 ```typescript
 const result = await invoke<CleanResult>('cleanup_old_files', { days_cutoff: 90 }, 300000);
+```
+
+**Security:**
+- All paths validated before deletion
+- System directories protected
+- User home directory restriction
 ```
 
 ---
@@ -1123,7 +1541,27 @@ pub async fn update_tray_icon(_app_handle: tauri::AppHandle, status_color: Strin
 await invoke('update_tray_icon', { status_color: 'yellow' });
 ```
 
-**Note:** This command currently logs status changes for debugging/monitoring purposes. The tray icon itself is statically configured during application startup. Full dynamic icon switching would require platform-specific implementation with multiple icon variants.
+**Description:**
+- Updates system tray icon based on status color
+- Creates colored fallback icon based on status
+- Status colors: "green", "yellow", "red"
+- Requires tray icon to be initialized (done in main.rs)
+- Platform-specific: Only works on desktop platforms
+
+**Implementation Notes:**
+- Currently uses fallback colored icons
+- Full custom icon loading requires image-png/image-ico Tauri features
+- Tray icon must be initialized before calling this command
+- Returns error if tray icon is not available
+
+**Usage:**
+```typescript
+await invoke('update_tray_icon', { status_color: 'yellow' });
+```
+
+**Errors:**
+- "Tray icon not available" - Tray icon not initialized
+- "Failed to set tray icon" - Icon update failed
 
 ---
 

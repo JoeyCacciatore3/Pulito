@@ -176,16 +176,6 @@ export function getTemperatureColor(temp: number, thresholds: { good: number; wa
 	return 'rgb(239, 68, 68)'; // Red
 }
 
-/**
- * Format bytes for chart tooltips
- */
-export function formatBytesForChart(bytes: number): string {
-	if (bytes === 0) return '0 B';
-	const k = 1024;
-	const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-	const i = Math.floor(Math.log(bytes) / Math.log(k));
-	return `${(bytes / Math.pow(k, i)).toFixed(1)} ${sizes[i]}`;
-}
 
 /**
  * Format percentage for chart tooltips

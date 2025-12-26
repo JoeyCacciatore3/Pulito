@@ -55,12 +55,17 @@
     "vitest": "^4.0.16"
   },
   "dependencies": {
+    "@tanstack/svelte-virtual": "^3.13.13",
     "@tauri-apps/api": "^2.9.1",
     "@tauri-apps/plugin-notification": "^2.3.3",
     "@tauri-apps/plugin-os": "^2.3.2",
     "@tauri-apps/plugin-shell": "^2.3.3",
+    "@types/d3-hierarchy": "^3.1.7",
+    "@types/d3-selection": "^3.0.11",
     "chart.js": "^4.5.1",
     "cookie": "0.7.0",
+    "d3-hierarchy": "^3.1.2",
+    "d3-selection": "^3.0.0",
     "svelte5-chartjs": "^1.0.0"
   },
   "engines": {

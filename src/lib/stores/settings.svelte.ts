@@ -9,7 +9,7 @@ import type {
 	ScanSettings,
 } from '$lib/generated/types';
 
-// Re-export for backward compatibility
+// Re-export types for convenience
 export type {
 	AppSettings,
 	TrashSettings,

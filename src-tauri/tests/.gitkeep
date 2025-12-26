@@ -6,3 +6,4 @@ Currently, unit tests are co-located with source files using `#[cfg(test)]` modu
 Integration tests will be added here as needed for testing cross-module interactions
 and Tauri IPC command handlers.
 
+

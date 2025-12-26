@@ -71,41 +71,4 @@
 			</div>
 		{/if}
 	</div>
-{:else}
-	<!-- Network Monitor (takes GPU slot if no GPU) -->
-	<div class="card p-6">
-		<div class="flex items-center justify-between mb-4">
-			<h3 class="font-semibold flex items-center gap-2">
-				<span class="text-xl">🌐</span>
-				Network
-			</h3>
-		</div>
-
-		<!-- Network Stats -->
-		<div class="space-y-4">
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-2">
-					<span class="text-green-500">⬆️</span>
-					<span class="text-sm text-[var(--color-text-secondary)]">Upload</span>
-				</div>
-				<span class="font-medium">0 B/s</span>
-			</div>
-
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-2">
-					<span class="text-blue-500">⬇️</span>
-					<span class="text-sm text-[var(--color-text-secondary)]">Download</span>
-				</div>
-				<span class="font-medium">0 B/s</span>
-			</div>
-		</div>
-
-		<!-- Network Activity Indicator -->
-		<div class="mt-4 pt-4 border-t border-[var(--color-border)]">
-			<div class="flex items-center justify-center gap-2">
-				<div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-				<span class="text-sm text-[var(--color-text-secondary)]">Active</span>
-			</div>
-		</div>
-	</div>
 {/if}

@@ -9,6 +9,9 @@
 	import SmartCleanup from '$lib/components/SmartCleanup.svelte';
 	import EnhancedTreeView from '$lib/components/EnhancedTreeView.svelte';
 	import FilesystemHealth from '$lib/components/FilesystemHealth.svelte';
+	import SystemHealthMonitor from '$lib/components/SystemHealthMonitor.svelte';
+	import DiskPulse from '$lib/components/DiskPulse.svelte';
+	import StorageRecovery from '$lib/components/StorageRecovery.svelte';
 	import StartupManager from '$lib/components/StartupManager.svelte';
 	import TrashView from '$lib/components/TrashView.svelte';
 	import Settings from '$lib/components/Settings.svelte';
@@ -68,6 +71,12 @@
 				<EnhancedTreeView />
 			{:else if navigation.view === 'filesystem-health'}
 				<FilesystemHealth />
+			{:else if navigation.view === 'system-health'}
+				<SystemHealthMonitor />
+			{:else if navigation.view === 'disk-pulse'}
+				<DiskPulse />
+			{:else if navigation.view === 'storage-recovery'}
+				<StorageRecovery />
 			{:else if navigation.view === 'startup'}
 				<StartupManager />
 			{:else if navigation.view === 'trash'}

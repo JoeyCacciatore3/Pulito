@@ -304,12 +304,12 @@ pulito/
 - **Storage Recovery Suite**: Duplicate detection, large files, old downloads
 - **Cache Optimization Suite**: Multi-source cache analytics and cleanup
 - **Category-Based UI**: Organized cleanup cards on dashboard
-- **Smart Preview Pane**: Visual file previews in TreeView
+- **Smart Preview Pane**: Visual file previews in EnhancedTreeView
 - **Timeout Protection**: All operations protected against hanging
 - **System Tray Integration**: Background monitoring with status indicators
 
 ### 🔄 **Future Enhancements**
-- **Predictive Analytics**: AI-driven system health predictions and recommendations
+- **Predictive Analytics**: Advanced system health predictions and recommendations
 - **Performance Profiling**: Advanced bottleneck identification and optimization suggestions
 - **Automated Maintenance**: Scheduled cleanup operations with smart scheduling
 - **Cloud Integration**: Sync settings and data across devices

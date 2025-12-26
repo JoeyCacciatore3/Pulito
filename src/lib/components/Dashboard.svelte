@@ -42,11 +42,11 @@
 
 		const cats: CleanupCategory[] = [];
 
-		// Smart Cleanup - unified AI-powered cleanup
+		// Smart Cleanup - unified system analysis cleanup
 		cats.push({
 			id: 'smart_cleanup',
 			title: 'Smart Cleanup',
-			description: 'AI-powered system optimization with intelligent recommendations',
+			description: 'System analysis and optimization with intelligent recommendations',
 			icon: '🤖',
 			color: 'bg-gradient-to-r from-blue-100 to-purple-100 border-blue-200 text-blue-800',
 			estimatedSavings: (stats.cache_size + (stats.orphan_packages_size || 0) + (stats.cleanable_space || 0)) || null,

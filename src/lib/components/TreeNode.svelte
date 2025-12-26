@@ -11,7 +11,6 @@
 		expanded: boolean;
 		selected: boolean;
 		riskLevel: 'safe' | 'caution' | 'warning';
-		aiInsight?: string;
 		usagePattern?: 'frequent' | 'occasional' | 'rare' | 'never';
 		parent?: TreeNodeData;
 	}
@@ -26,13 +25,13 @@
 
 	let { node, toggleNodeExpansion, toggleNodeSelection, getRiskColor, getUsageColor }: Props = $props();
 
-	// Import the component for recursive use
 	import TreeNode from './TreeNode.svelte';
 	import { formatBytes } from '$lib/utils/tauri';
+	import SizeBar from './ui/SizeBar.svelte';
 </script>
 
 <div class="tree-node">
-	<div class="flex items-center gap-2 py-1 hover:bg-gray-50 px-2 rounded">
+	<div class="flex items-center gap-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-900/50 px-2 rounded">
 		<!-- Expansion Toggle -->
 		{#if node.isDirectory && node.children && node.children.length > 0}
 			<button
@@ -62,11 +61,6 @@
 		<div class="flex-1 min-w-0">
 			<div class="flex items-center gap-2">
 				<span class="font-medium truncate">{node.name}</span>
-				{#if node.aiInsight}
-					<div class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-						AI: {node.aiInsight}
-					</div>
-				{/if}
 			</div>
 
 			<div class="flex items-center gap-4 text-xs text-muted">

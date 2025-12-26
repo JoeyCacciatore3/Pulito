@@ -86,7 +86,7 @@ src/
 │   │   ├── CacheOptimization.svelte
 │   │   ├── DiskPulse.svelte
 │   │   ├── TrashView.svelte
-│   │   ├── TreeView.svelte
+│   │   ├── EnhancedTreeView.svelte
 │   │   ├── Settings.svelte
 │   │   ├── Header.svelte
 │   │   ├── Sidebar.svelte
@@ -98,7 +98,8 @@ src/
 │   │   ├── notifications.svelte.ts
 │   │   ├── scanner.svelte.ts
 │   │   ├── settings.svelte.ts
-│   │   └── theme.svelte.ts
+│   │   ├── theme.svelte.ts
+│   │   └── metrics-history.svelte.ts
 │   └── utils/               # Utility functions
 │       ├── tauri.ts         # Tauri IPC wrapper with timeout protection
 │       ├── logger.ts        # Structured logging
@@ -141,12 +142,14 @@ App Layout
 ├── Sidebar (navigation, selected items)
 └── Main Content
     ├── Dashboard (overview, categories)
-    ├── SystemHealthMonitor (real-time monitoring)
-    ├── FilesystemHealth (health scan results)
-    ├── StorageRecovery (duplicates, large files, old downloads)
-    ├── CacheOptimization (cache analytics and cleanup)
+    ├── SmartCleanup (system analysis and cleanup recommendations)
+    ├── EnhancedTreeView (file browser with preview and usage analysis)
+    ├── SystemHealthMonitor (real-time system monitoring)
+    ├── FilesystemHealth (filesystem health analysis)
     ├── DiskPulse (disk usage monitoring)
-    ├── TreeView (file browser with preview)
+    ├── StorageRecovery (storage cleanup tools)
+    ├── CacheOptimization (cache analytics and cleanup)
+    ├── StartupManager (startup program management)
     ├── TrashView (trash management)
     └── Settings (application settings)
 ```
@@ -159,7 +162,7 @@ App Layout
 src-tauri/src/
 ├── main.rs              # Application entry point, Tauri setup
 ├── commands/            # IPC command handlers
-│   └── mod.rs          # All 26 Tauri commands
+│   └── mod.rs          # All 38 Tauri commands
 ├── db/                  # Database management
 │   └── mod.rs          # SQLite schema and operations
 ├── scanner/             # File system scanning logic
@@ -180,7 +183,7 @@ src-tauri/src/
 - Configures logging
 
 #### `commands/mod.rs`
-- Contains all 26 Tauri IPC command handlers
+- Contains all 38 Tauri IPC command handlers
 - Defines data structures (SystemStats, SystemHealthData, etc.)
 - Implements timeout protection for all commands
 - Handles error propagation
@@ -271,7 +274,7 @@ Frontend Dashboard
 ### Scan Flow
 
 ```
-Frontend TreeView/Scanner
+Frontend EnhancedTreeView/Scanner
     │
     ├─→ invoke('start_scan', options)
     │       │
@@ -286,7 +289,7 @@ Frontend TreeView/Scanner
     │       │       └─→ Return ScanResults
     │       │
     │       └─→ Update scanner store
-    └─→ Display results in TreeView
+    └─→ Display results in EnhancedTreeView
 ```
 
 ### Cleanup Flow

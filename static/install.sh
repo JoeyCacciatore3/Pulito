@@ -151,20 +151,20 @@ install_package() {
     case $DISTRO in
         ubuntu|debian|linuxmint|pop|zorin)
             PACKAGE_TYPE="deb"
-            PACKAGE_NAME="pulito_1.1.0_amd64.deb"
+            PACKAGE_NAME="pulito_1.0.0_amd64.deb"
             ;;
         fedora|centos|rhel|opensuse*)
             PACKAGE_TYPE="rpm"
-            PACKAGE_NAME="pulito-1.1.0-1.x86_64.rpm"
+            PACKAGE_NAME="pulito-1.0.0-1.x86_64.rpm"
             ;;
         *)
             # Default to AppImage for universal compatibility
             PACKAGE_TYPE="appimage"
-            PACKAGE_NAME="pulito_1.1.0.AppImage"
+            PACKAGE_NAME="pulito_1.0.0.AppImage"
             ;;
     esac
 
-    DOWNLOAD_URL="https://github.com/JoeyCacciatore3/pulito/releases/download/v1.1.0/${PACKAGE_NAME}"
+    DOWNLOAD_URL="https://github.com/JoeyCacciatore3/pulito/releases/download/v1.0.0/${PACKAGE_NAME}"
 
     log_info "Downloading $PACKAGE_NAME..."
     if ! curl -L -o "$PACKAGE_NAME" "$DOWNLOAD_URL"; then
@@ -176,7 +176,7 @@ install_package() {
     fi
 
     # Verify download (if checksums are available)
-    if curl -s -f "https://github.com/JoeyCacciatore3/pulito/releases/download/v1.1.0/checksums.txt" -o checksums.txt; then
+    if curl -s -f "https://github.com/JoeyCacciatore3/pulito/releases/download/v1.0.0/checksums.txt" -o checksums.txt; then
         log_info "Verifying download integrity..."
         if ! sha256sum -c checksums.txt --ignore-missing 2>/dev/null | grep -q "$PACKAGE_NAME: OK"; then
             log_warning "Checksum verification failed. Continuing anyway..."
@@ -288,7 +288,7 @@ case "${1:-}" in
         exit 0
         ;;
     --version|-v)
-        echo "Pulito Installer v1.1.0"
+        echo "Pulito Installer v1.0.0"
         exit 0
         ;;
     --no-deps)

@@ -117,14 +117,25 @@ npm run build
 
 **Components:**
 - `Dashboard.svelte` - Main dashboard view
-- `DiskPulse.svelte` - Real-time disk monitoring
-- `FilesystemHealth.svelte` - Filesystem analysis
-- `StorageRecovery.svelte` - Storage cleanup tools
-- `CacheOptimization.svelte` - Cache management
-- `TreeView.svelte` - File tree browser
+- `SmartCleanup.svelte` - System analysis and cleanup recommendations
+- `EnhancedTreeView.svelte` - Advanced file browser with usage analysis
+- `SystemHealthMonitor.svelte` - Real-time system health monitoring
+- `DiskPulse.svelte` - Disk usage monitoring and old files management
+- `FilesystemHealth.svelte` - Filesystem health analysis
+- `StorageRecovery.svelte` - Storage cleanup tools (duplicates, large files, old downloads)
+- `CacheOptimization.svelte` - Cache analytics and optimization
+- `StartupManager.svelte` - Startup program management
 - `TrashView.svelte` - Trash management
 - `Settings.svelte` - Application settings
-- `SystemHealthMonitor.svelte` - System monitoring
+- `PreviewDialog.svelte` - Cleanup preview dialog
+- `TreeNode.svelte` - Recursive tree node component
+- `Header.svelte` - Application header
+- `Sidebar.svelte` - Navigation sidebar
+- `ConfirmationDialog.svelte` - Confirmation dialog component
+- `NotificationToast.svelte` - Toast notification component
+- `charts/` - Chart components (8 components: CPU, Memory, Network, Disk I/O, Temperature, Storage, Sparkline, Performance Gauge)
+- `health/` - Health monitor components (9 components: CPU, Memory, GPU, Network, Disk, Temperature, Battery, Process, Performance Summary)
+- `ui/` - Base UI components (InfoCard, LoadingSpinner, ProgressBar)
 
 **Characteristics:**
 - ✅ Requires Tauri runtime (desktop app)

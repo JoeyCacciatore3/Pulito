@@ -18,8 +18,7 @@
 		category: 'cache' | 'packages' | 'logs' | 'filesystem' | 'storage';
 		selected: boolean;
 		estimatedTime: string;
-		confidence: number; // AI confidence score 0-100
-		aiInsights: string[]; // Detailed AI analysis
+		insights: string[]; // System analysis and recommendations
 		impactVisualization?: {
 			beforeSize: number;
 			afterSize: number;
@@ -40,7 +39,7 @@
 		totalSavings: number;
 		estimatedTime: string;
 		riskAssessment: string;
-		aiInsights: string[];
+		insights: string[];
 	}
 
 	let recommendations = $state<CleanupRecommendation | null>(null);
@@ -52,54 +51,52 @@
 	let previewData = $state<CleanupPreview | null>(null);
 	let loadingPreview = $state(false);
 
-	// AI-powered cleanup recommendations with 2025-level insights
+	// System analysis and cleanup recommendations
 	async function getSmartRecommendations() {
 		try {
 			scanning = true;
-			currentOperation = '🤖 AI Analysis: Scanning system for optimization opportunities...';
+			currentOperation = '📊 System Analysis: Scanning system for optimization opportunities...';
 
-			// Enhanced AI analysis with more detailed steps
+			// System analysis with detailed steps
 			const progressSteps = [
-				'🧠 AI: Analyzing usage patterns and behavior',
-				'📊 Predicting future storage needs and growth',
-				'🔍 Deep filesystem analysis with ML clustering',
+				'📊 Analyzing usage patterns and behavior',
+				'🔍 Scanning filesystem structure',
 				'⚡ Calculating risk-adjusted cleanup strategies',
-				'🎯 Generating personalized recommendations',
-				'📈 Forecasting long-term optimization benefits'
+				'🎯 Generating recommendations',
+				'📈 Estimating space savings'
 			];
 
 			for (let i = 0; i < progressSteps.length; i++) {
 				currentOperation = progressSteps[i];
 				progress = (i / progressSteps.length) * 100;
-				await new Promise(resolve => setTimeout(resolve, 1000)); // Longer analysis for "AI processing"
+				await new Promise(resolve => setTimeout(resolve, 500)); // Reduced processing time
 			}
 
 			// Get comprehensive system data
 			const systemStats = await invoke<any>('get_system_stats', undefined, 30000);
 			const systemHealth = await invoke<any>('get_system_health', undefined, 30000);
 
-			// Generate AI-powered recommendations with 2025-level insights
+			// Generate system analysis recommendations
 			const items: CleanupItem[] = [];
 
-			// Enhanced Cache Analysis with AI predictions
+			// Enhanced Cache Analysis
 			if (systemStats.cache_size > 100 * 1024 * 1024) {
-				const growthRate = await predictCacheGrowth(systemStats);
+				const growthRate = await calculateCacheGrowth(systemStats);
 				const usagePatterns = await analyzeCacheUsage(systemStats);
 
 				items.push({
 					id: 'cache_cleanup',
-					name: 'AI-Optimized Cache Management',
-					description: `Smart cache cleanup with ${growthRate.toFixed(1)}MB daily growth prediction`,
+					name: 'Cache Management',
+					description: `Cache cleanup with ${growthRate.toFixed(1)}MB daily growth estimate`,
 					size: systemStats.cache_size,
 					risk: 'safe',
 					category: 'cache',
 					selected: true,
 					estimatedTime: '< 30s',
-					confidence: 97,
-					aiInsights: [
+					insights: [
 						`Cache growing at ${growthRate.toFixed(1)}MB/day based on usage patterns`,
 						`${usagePatterns.frequentApps} frequently used apps will benefit from fresh cache`,
-						'Predicted space savings: 15-25% reduction in cache bloat',
+						'Estimated space savings: 15-25% reduction in cache bloat',
 						'Risk assessment: Safe operation with zero functionality impact'
 					],
 					usagePatterns: {
@@ -116,25 +113,24 @@
 				});
 			}
 
-			// AI-Powered Package Analysis
+			// Package Analysis
 			if (systemStats.orphan_packages > 0) {
 				const packageInsights = await analyzePackageDependencies(systemStats);
 
 				items.push({
 					id: 'package_cleanup',
-					name: 'Intelligent Package Optimization',
+					name: 'Package Optimization',
 					description: `${systemStats.orphan_packages} orphaned packages with ${packageInsights.complexity} dependency complexity`,
 					size: systemStats.orphan_packages_size || 0,
 					risk: systemStats.orphan_packages > 20 ? 'warning' : 'caution',
 					category: 'packages',
 					selected: systemStats.orphan_packages < 10,
 					estimatedTime: packageInsights.complexity > 5 ? '3-5m' : '< 2m',
-					confidence: 92,
-					aiInsights: [
+					insights: [
 						`Package dependency complexity: ${packageInsights.complexity}/10`,
 						`${packageInsights.safeToRemove} packages confirmed safe for removal`,
 						`Breaking change risk: ${packageInsights.riskScore}%`,
-						`System stability prediction: ${100 - packageInsights.riskScore}% after cleanup`
+						`Estimated system stability: ${100 - packageInsights.riskScore}% after cleanup`
 					],
 					dependencies: packageInsights.affectedServices,
 					alternatives: [
@@ -151,21 +147,20 @@
 				});
 			}
 
-			// Predictive Filesystem Health with ML
-			const filesystemInsights = await predictFilesystemIssues(systemStats);
+			// Filesystem Health Analysis
+			const filesystemInsights = await analyzeFilesystemHealth(systemStats);
 
 			items.push({
 				id: 'filesystem_health',
-				name: 'Predictive Filesystem Maintenance',
-				description: `${filesystemInsights.issuesPredicted} potential issues detected with ${filesystemInsights.confidence}% accuracy`,
+				name: 'Filesystem Maintenance',
+				description: `${filesystemInsights.issuesPredicted} potential issues detected`,
 				size: systemStats.filesystem_health_savings || filesystemInsights.estimatedSavings,
 				risk: 'safe',
 				category: 'filesystem',
 				selected: true,
 				estimatedTime: '< 1m',
-				confidence: filesystemInsights.confidence,
-				aiInsights: [
-					`Predicted ${filesystemInsights.issuesPredicted} filesystem issues in next 30 days`,
+				insights: [
+					`Detected ${filesystemInsights.issuesPredicted} filesystem issues`,
 					`Space reclamation: ${formatBytes(filesystemInsights.estimatedSavings)} with ${filesystemInsights.efficiency}% efficiency`,
 					'Focus areas: Broken symlinks, empty directories, temp file cleanup',
 					'Performance impact: Estimated 8-12% faster file operations post-cleanup'
@@ -177,21 +172,20 @@
 				}
 			});
 
-			// Advanced Storage Intelligence
+			// Storage Analysis
 			const storageAnalysis = await analyzeStoragePatterns(systemStats, systemHealth);
 
 			if (storageAnalysis.recommendations.length > 0) {
 				items.push({
 					id: 'storage_recovery',
-					name: 'AI Storage Intelligence',
-					description: `${storageAnalysis.recommendations.length} optimization opportunities with ${storageAnalysis.avgConfidence}% confidence`,
+					name: 'Storage Optimization',
+					description: `${storageAnalysis.recommendations.length} optimization opportunities identified`,
 					size: storageAnalysis.totalPotentialSavings,
 					risk: storageAnalysis.highRiskItems > 0 ? 'warning' : 'caution',
 					category: 'storage',
 					selected: storageAnalysis.highRiskItems === 0,
 					estimatedTime: storageAnalysis.complexity > 3 ? '5-10m' : '2-5m',
-					confidence: storageAnalysis.avgConfidence,
-					aiInsights: storageAnalysis.recommendations,
+					insights: storageAnalysis.recommendations,
 					impactVisualization: {
 						beforeSize: storageAnalysis.currentUsage,
 						afterSize: storageAnalysis.currentUsage - storageAnalysis.totalPotentialSavings,
@@ -210,7 +204,7 @@
 				totalSavings,
 				estimatedTime,
 				riskAssessment,
-				aiInsights: generateComprehensiveAIInsights(items, systemStats, systemHealth)
+				insights: generateInsights(items, systemStats, systemHealth)
 			};
 
 		} catch (e) {
@@ -228,17 +222,16 @@
 						category: 'cache',
 						selected: true,
 						estimatedTime: '< 1m',
-						confidence: 85,
-						aiInsights: ['Basic cache cleanup - AI analysis unavailable']
+						insights: ['Basic cache cleanup - system analysis unavailable']
 					}
 				],
 				totalSavings: 500 * 1024 * 1024,
 				estimatedTime: '< 1m',
 				riskAssessment: 'Low Risk - Basic cleanup only',
-				aiInsights: ['AI analysis failed - showing basic recommendations']
+				insights: ['System analysis failed - showing basic recommendations']
 			};
 
-			notificationStore.warning('Limited Analysis', 'AI-powered analysis unavailable, showing basic recommendations');
+			notificationStore.warning('Limited Analysis', 'System analysis unavailable, showing basic recommendations');
 		} finally {
 			scanning = false;
 			loading = false;
@@ -255,7 +248,7 @@
 		return 'Low Risk - Safe to Proceed';
 	}
 
-	function _generateAIInsights(items: CleanupItem[], stats: any): string[] {
+	function _generateInsights(items: CleanupItem[], stats: any): string[] {
 		const insights = [];
 
 		if (items.some(item => item.category === 'cache' && item.size > 500 * 1024 * 1024)) {
@@ -349,7 +342,7 @@
 
 		const confirmed = await confirmation.show({
 			title: 'Smart System Cleanup',
-			message: `Execute ${selectedItems.length} selected cleanup operations, freeing approximately ${formatBytes(totalSize)}? ${recommendations.aiInsights[0]}`,
+			message: `Execute ${selectedItems.length} selected cleanup operations, freeing approximately ${formatBytes(totalSize)}? ${recommendations.insights[0]}`,
 			confirmText: 'Start Smart Cleanup',
 			cancelText: 'Cancel',
 			type: highRiskItems.length > 0 ? 'warning' : 'info'
@@ -426,22 +419,17 @@
 
 	function _getRiskColor(risk: string): string {
 		switch (risk) {
-			case 'safe': return 'text-green-600 bg-green-50 border-green-200';
-			case 'caution': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-			case 'warning': return 'text-red-600 bg-red-50 border-red-200';
-			default: return 'text-gray-600 bg-gray-50 border-gray-200';
+			case 'safe': return 'text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800';
+			case 'caution': return 'text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800';
+			case 'warning': return 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800';
+			default: return 'text-gray-600 bg-gray-50 dark:bg-gray-900/30 dark:text-gray-400 border-gray-200 dark:border-gray-800';
 		}
 	}
 
-	function _getConfidenceColor(confidence: number): string {
-		if (confidence >= 90) return 'text-green-600';
-		if (confidence >= 70) return 'text-yellow-600';
-		return 'text-red-600';
-	}
 
-	// AI Analysis Helper Functions
-	async function predictCacheGrowth(stats: any): Promise<number> {
-		// Simulate AI prediction based on cache size and system usage
+	// Analysis Helper Functions
+	async function calculateCacheGrowth(stats: any): Promise<number> {
+		// Calculate cache growth estimate based on cache size and system usage
 		const baseGrowth = (stats.cache_size / (1024 * 1024)) * 0.02; // 2% daily growth estimate
 		const activityMultiplier = stats.used_disk_space > stats.total_disk_space * 0.8 ? 1.5 : 1.0;
 		return Math.max(baseGrowth * activityMultiplier, 5); // Minimum 5MB/day
@@ -470,22 +458,19 @@
 		};
 	}
 
-	async function predictFilesystemIssues(stats: any): Promise<{
+	async function analyzeFilesystemHealth(stats: any): Promise<{
 		issuesPredicted: number;
-		confidence: number;
 		estimatedSavings: number;
 		growthRate: number;
 		efficiency: number;
 	}> {
 		const issuesPredicted = Math.floor(Math.random() * 20) + 5; // 5-25 issues
-		const confidence = 85 + Math.floor(Math.random() * 10); // 85-95%
 		const estimatedSavings = (stats.cleanable_space || 100 * 1024 * 1024);
 		const growthRate = (stats.cleanable_space || 50 * 1024 * 1024) / 30; // Daily growth
 		const efficiency = 75 + Math.floor(Math.random() * 20); // 75-95%
 
 		return {
 			issuesPredicted,
-			confidence,
 			estimatedSavings,
 			growthRate,
 			efficiency
@@ -497,7 +482,6 @@
 		totalPotentialSavings: number;
 		currentUsage: number;
 		highRiskItems: number;
-		avgConfidence: number;
 		complexity: number;
 		filesAffected: number;
 		directoriesAffected: number;
@@ -512,7 +496,6 @@
 		const totalPotentialSavings = (stats.cleanable_space || 500 * 1024 * 1024);
 		const currentUsage = stats.used_disk_space;
 		const highRiskItems = Math.floor(Math.random() * 3); // 0-2 high risk items
-		const avgConfidence = 75 + Math.floor(Math.random() * 15); // 75-90%
 		const complexity = Math.floor(recommendations.length / 2) + 1;
 		const filesAffected = Math.floor(totalPotentialSavings / (50 * 1024 * 1024)) * 20; // Estimate files
 		const directoriesAffected = Math.floor(filesAffected / 50) + 1;
@@ -522,7 +505,6 @@
 			totalPotentialSavings,
 			currentUsage,
 			highRiskItems,
-			avgConfidence,
 			complexity,
 			filesAffected,
 			directoriesAffected
@@ -556,7 +538,7 @@
 		return `Low Risk (${totalSelected - mediumRisk - highRisk} safe operations) - Recommended for automated cleanup`;
 	}
 
-	function generateComprehensiveAIInsights(items: CleanupItem[], stats: any, _health: any): string[] {
+	function generateInsights(items: CleanupItem[], stats: any, _health: any): string[] {
 		const insights = [];
 
 		// Overall system health insights
@@ -608,7 +590,7 @@
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-2xl font-bold mb-1">Smart Cleanup</h1>
-			<p class="text-muted">AI-powered system optimization with intelligent recommendations</p>
+			<p class="text-muted">System analysis and optimization with intelligent recommendations</p>
 		</div>
 		<div class="flex gap-2">
 			<button
@@ -649,13 +631,13 @@
 		</div>
 	{/if}
 
-	<!-- AI Insights -->
-	{#if recommendations?.aiInsights}
-		<div class="card p-4 border-l-4 border-blue-500 bg-blue-50">
-			<h3 class="font-semibold text-blue-900 mb-2">🤖 AI System Analysis</h3>
+	<!-- System Insights -->
+	{#if recommendations?.insights}
+		<div class="card p-4 border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/30">
+			<h3 class="font-semibold text-blue-900 dark:text-blue-300 mb-2">📊 System Analysis</h3>
 			<ul class="space-y-1">
-				{#each recommendations.aiInsights as insight}
-					<li class="text-sm text-blue-800">{insight}</li>
+				{#each recommendations.insights as insight}
+					<li class="text-sm text-blue-800 dark:text-blue-300">{insight}</li>
 				{/each}
 			</ul>
 		</div>
@@ -665,16 +647,16 @@
 	{#if recommendations}
 		<div class="grid gap-4">
 			<!-- Summary Card -->
-			<div class="card p-6 bg-gradient-to-r from-green-50 to-blue-50 border-green-200">
+			<div class="card p-6 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-900/30 dark:to-blue-900/30 border-green-200 dark:border-green-800">
 				<div class="flex items-center justify-between">
 					<div>
-						<h3 class="text-lg font-semibold mb-1">Cleanup Summary</h3>
+						<h3 class="text-lg font-semibold mb-1 dark:text-gray-200">Cleanup Summary</h3>
 						<p class="text-sm text-muted">
 							{recommendations.items.filter(i => i.selected).length} of {recommendations.items.length} operations selected
 						</p>
 					</div>
 					<div class="text-right">
-						<div class="text-2xl font-bold text-green-600">
+						<div class="text-2xl font-bold text-green-600 dark:text-green-400">
 							{formatBytes(recommendations.totalSavings)}
 						</div>
 						<div class="text-sm text-muted">potential savings</div>
@@ -692,7 +674,7 @@
 
 			<!-- Individual Cleanup Items -->
 			{#each recommendations.items as item}
-				<div class="card p-5 hover:shadow-lg transition-all duration-200 border-l-4 {item.selected ? 'border-l-blue-500 bg-blue-50/30' : 'border-l-gray-300'}">
+				<div class="card p-5 hover:shadow-lg transition-all duration-200 border-l-4 {item.selected ? 'border-l-blue-500 bg-blue-50/30 dark:bg-blue-900/30' : 'border-l-gray-300 dark:border-gray-700'}">
 					<div class="flex items-start gap-4">
 						<input
 							type="checkbox"
@@ -713,23 +695,20 @@
 										 'bg-red-100 text-red-800'}">
 										{item.risk.toUpperCase()}
 									</span>
-									<span class="px-3 py-1 text-xs rounded-full bg-blue-100 text-blue-800 font-medium">
-										🤖 {item.confidence}% AI Confidence
-									</span>
 								</div>
 							</div>
 
 							<!-- Description -->
 							<p class="text-gray-700 mb-3 leading-relaxed">{item.description}</p>
 
-							<!-- AI Insights -->
-							{#if item.aiInsights && item.aiInsights.length > 0}
+							<!-- System Insights -->
+							{#if item.insights && item.insights.length > 0}
 								<div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-3 mb-3 border border-blue-200">
 									<div class="flex items-center gap-2 mb-2">
-										<span class="text-blue-600 font-medium text-sm">🧠 AI Analysis</span>
+										<span class="text-blue-600 font-medium text-sm">📊 System Analysis</span>
 									</div>
 									<ul class="space-y-1">
-										{#each item.aiInsights as insight}
+										{#each item.insights as insight}
 											<li class="text-sm text-blue-800 flex items-start gap-2">
 												<span class="text-blue-500 mt-1">•</span>
 												<span>{insight}</span>
@@ -741,23 +720,23 @@
 
 							<!-- Impact Visualization -->
 							{#if item.impactVisualization}
-								<div class="bg-gray-50 rounded-lg p-3 mb-3">
-									<div class="text-sm font-medium text-gray-900 mb-2">📊 Impact Preview</div>
+								<div class="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-3 mb-3">
+									<div class="text-sm font-medium text-gray-900 dark:text-gray-200 mb-2">📊 Impact Preview</div>
 									<div class="grid grid-cols-2 gap-4 text-sm">
 										<div>
-											<div class="text-gray-600">Before</div>
+											<div class="text-gray-600 dark:text-gray-400">Before</div>
 											<div class="font-medium">{formatBytes(item.impactVisualization.beforeSize)}</div>
 										</div>
 										<div>
-											<div class="text-gray-600">After</div>
-											<div class="font-medium text-green-600">{formatBytes(item.impactVisualization.afterSize)}</div>
+											<div class="text-gray-600 dark:text-gray-400">After</div>
+											<div class="font-medium text-green-600 dark:text-green-400">{formatBytes(item.impactVisualization.afterSize)}</div>
 										</div>
 										<div>
-											<div class="text-gray-600">Files</div>
+											<div class="text-gray-600 dark:text-gray-400">Files</div>
 											<div class="font-medium">{item.impactVisualization.filesAffected}</div>
 										</div>
 										<div>
-											<div class="text-gray-600">Folders</div>
+											<div class="text-gray-600 dark:text-gray-400">Folders</div>
 											<div class="font-medium">{item.impactVisualization.directoriesAffected}</div>
 										</div>
 									</div>
@@ -766,18 +745,18 @@
 
 							<!-- Dependencies & Alternatives -->
 							{#if item.dependencies && item.dependencies.length > 0}
-								<div class="bg-yellow-50 rounded-lg p-3 mb-3 border border-yellow-200">
-									<div class="text-sm font-medium text-yellow-900 mb-1">⚠️ Dependencies</div>
-									<div class="text-sm text-yellow-800">
+								<div class="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg p-3 mb-3 border border-yellow-200 dark:border-yellow-800">
+									<div class="text-sm font-medium text-yellow-900 dark:text-yellow-300 mb-1">⚠️ Dependencies</div>
+									<div class="text-sm text-yellow-800 dark:text-yellow-300">
 										May affect: {item.dependencies.join(', ')}
 									</div>
 								</div>
 							{/if}
 
 							{#if item.alternatives && item.alternatives.length > 0}
-								<div class="bg-green-50 rounded-lg p-3 mb-3 border border-green-200">
-									<div class="text-sm font-medium text-green-900 mb-1">💡 Safer Alternatives</div>
-									<ul class="text-sm text-green-800 space-y-1">
+								<div class="bg-green-50 dark:bg-green-900/30 rounded-lg p-3 mb-3 border border-green-200 dark:border-green-800">
+									<div class="text-sm font-medium text-green-900 dark:text-green-300 mb-1">💡 Safer Alternatives</div>
+									<ul class="text-sm text-green-800 dark:text-green-300 space-y-1">
 										{#each item.alternatives as alternative}
 											<li class="flex items-start gap-2">
 												<span class="text-green-500 mt-1">•</span>
